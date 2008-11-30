@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GeoClipmap", "GeoClipmap.vcproj", "{AFF09F50-D5A4-4C1F-BEE4-7BA61CD71475}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AFF09F50-D5A4-4C1F-BEE4-7BA61CD71475}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AFF09F50-D5A4-4C1F-BEE4-7BA61CD71475}.Debug|Win32.Build.0 = Debug|Win32
+		{AFF09F50-D5A4-4C1F-BEE4-7BA61CD71475}.Release|Win32.ActiveCfg = Release|Win32
+		{AFF09F50-D5A4-4C1F-BEE4-7BA61CD71475}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
