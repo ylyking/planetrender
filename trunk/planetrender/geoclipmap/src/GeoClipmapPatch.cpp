@@ -32,11 +32,11 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 	for(int i = 0; i < 16; i++) {
 		itBlk = getBlock(itBlk);
 		if (i < 12)
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MXM);
+			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 		else if (i < 14)
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MX3);
+			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MX3);
 		else if (i < 16)
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_3XM);
+			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_3XM);
 		//(*itBlk)->m_PosIdx = i;
 		(*itBlk)->m_Pos = getBlockPos(i);
 		(*itBlk)->m_LodLvl = lodLvl;
@@ -67,13 +67,13 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 
 		// 3xM
 		itBlk = getBlock(itBlk);
-		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_3XM);
+		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_3XM);
 		(*itBlk)->m_Pos = Vector2(0, initPos);
 		(*itBlk)->m_LodLvl = lodLvl;
 		itBlk = nextBlock(itBlk);
 
 		itBlk = getBlock(itBlk);
-		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_3XM);
+		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_3XM);
 		(*itBlk)->m_Pos = Vector2(0, -initPos);
 		(*itBlk)->m_LodLvl = lodLvl;
 		itBlk = nextBlock(itBlk);
@@ -81,13 +81,13 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 
 		// Mx3
 		itBlk = getBlock(itBlk);
-		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MX3);
+		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MX3);
 		(*itBlk)->m_Pos = Vector2(initPos, 0);
 		(*itBlk)->m_LodLvl = lodLvl;
 		itBlk = nextBlock(itBlk);
 
 		itBlk = getBlock(itBlk);
-		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MX3);
+		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MX3);
 		(*itBlk)->m_Pos = Vector2(-initPos, 0);
 		(*itBlk)->m_LodLvl = lodLvl;
 		itBlk = nextBlock(itBlk);
@@ -95,50 +95,50 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		for(int j = 0; j < 2 + k; j++) {
 			// MxM
 			itBlk = getBlock(itBlk);
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MXM);
+			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 			(*itBlk)->m_Pos = Vector2(x, y);
 			(*itBlk)->m_LodLvl = lodLvl;
 			itBlk = nextBlock(itBlk);
 
 			itBlk = getBlock(itBlk);
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MXM);
+			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 			(*itBlk)->m_Pos = Vector2(-x, y);
 			(*itBlk)->m_LodLvl = lodLvl;
 			itBlk = nextBlock(itBlk);
 
 			itBlk = getBlock(itBlk);
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MXM);
+			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 			(*itBlk)->m_Pos = Vector2(-x, -y);
 			(*itBlk)->m_LodLvl = lodLvl;
 			itBlk = nextBlock(itBlk);
 
 			itBlk = getBlock(itBlk);
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MXM);
+			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 			(*itBlk)->m_Pos = Vector2(x, -y);
 			(*itBlk)->m_LodLvl = lodLvl;
 			itBlk = nextBlock(itBlk);
 
 			if (j > 0) {
 				itBlk = getBlock(itBlk);
-				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MXM);
+				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 				(*itBlk)->m_Pos = Vector2(y, x);
 				(*itBlk)->m_LodLvl = lodLvl;
 				itBlk = nextBlock(itBlk);
 
 				itBlk = getBlock(itBlk);
-				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MXM);
+				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 				(*itBlk)->m_Pos = Vector2(-y, x);
 				(*itBlk)->m_LodLvl = lodLvl;
 				itBlk = nextBlock(itBlk);
 
 				itBlk = getBlock(itBlk);
-				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MXM);
+				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 				(*itBlk)->m_Pos = Vector2(-y, -x);
 				(*itBlk)->m_LodLvl = lodLvl;
 				itBlk = nextBlock(itBlk);
 
 				itBlk = getBlock(itBlk);
-				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MXM);
+				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 				(*itBlk)->m_Pos = Vector2(y, -x);
 				(*itBlk)->m_LodLvl = lodLvl;
 				itBlk = nextBlock(itBlk);
@@ -160,13 +160,13 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeL(int lodLvl, const B
 	BlockList::iterator itBlk = freeBlockPtr;
 
 	itBlk = getBlock(itBlk);
-	(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_2XL);
+	(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_2XL);
 	(*itBlk)->m_Pos = Vector2(Math::Sign(m_ViewPosList[lodLvl].x - m_ViewPosList[lodLvl + 1].x) * pos, 0);
 	(*itBlk)->m_LodLvl = lodLvl;
 	itBlk = nextBlock(itBlk);
 
 	itBlk = getBlock(itBlk);
-	(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_LX2);
+	(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_LX2);
 	(*itBlk)->m_Pos = Vector2(0, Math::Sign(m_ViewPosList[lodLvl].y - m_ViewPosList[lodLvl + 1].y) * pos);
 	(*itBlk)->m_LodLvl = lodLvl;
 	itBlk = nextBlock(itBlk);
@@ -186,11 +186,11 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeFinest(int lodLvl, co
 	for(int i = 16; i < 24; i++) {
 		itBlk = getBlock(itBlk);
 		if (i < 20)
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MXM);
+			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 		else if (i < 22)
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_MX3);
+			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MX3);
 		else if (i < 24)
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::MeshType::GCM_MESH_2XL);
+			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_2XL);
 		(*itBlk)->m_Pos = getBlockPos(i);
 		(*itBlk)->m_LodLvl = lodLvl;
 		itBlk = nextBlock(itBlk);
@@ -224,7 +224,7 @@ void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 	if (m_ViewPosListUpdated) {
 		m_LodMatList.resize(m_ViewPosList.size());
 
-		for(int lodLvl = 0; lodLvl < m_LodMatList.size(); lodLvl++) {
+		for(int lodLvl = 0; lodLvl < (int)m_LodMatList.size(); lodLvl++) {
 			// room for optimization, store the matRing
 			// translate the ring and scale them
 			Matrix4 matRing;
@@ -238,9 +238,9 @@ void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 		}
 
 		BlockList::iterator itBlk =  m_BlockList.begin();
-		for(int i = 0; i < m_ViewPosList.size(); i++) {
+		for(int i = 0; i < (int)m_ViewPosList.size(); i++) {
 			itBlk = placeRing(i, itBlk);
-			if (i < m_ViewPosList.size() - 1)
+			if (i < (int)m_ViewPosList.size() - 1)
 				itBlk = placeL(i, itBlk);
 			else
 				itBlk = placeFinest(i, itBlk);

@@ -9,15 +9,15 @@
 using namespace Ogre;
 
 GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, int n, SceneManager* sceneMgr, Camera* camera) :
-m_N(n),
-m_SceneMgr(sceneMgr),
-m_Camera(camera),
-m_Radius(radius),
-m_MaxHeight(maxHeight),
-m_SemiEdgeLen(radius * Math::Cos(Degree(45))),
-m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
+	m_N(n),
+	m_SceneMgr(sceneMgr),
+	m_Camera(camera),
+	m_Radius(radius),
+	m_MaxHeight(maxHeight),
+	m_SemiEdgeLen(radius * Math::Cos(Degree(45))),
+	m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
 {
-	m_ClipmapSize = 1 * (m_N - 1); // this is wrong, just a replacement value for debug
+	m_ClipmapSize = 2 * (m_N - 1); // this is wrong, just a replacement value for debug
 	m_ResNamePrefix = StringConverter::toString(reinterpret_cast<unsigned long>(this)) + "_";
 
 	// create the patches
@@ -364,12 +364,13 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 			float half_nl = nl / 2;
 			float half_nl_lod = half_nl * lodLvlPow;
 			float eps = 1e-3;
+			float halfClipmapSize = m_ClipmapSize / 2;
 
 			float xp, xn, yp, yn;
-			xp = half_nl - viewPosLists[activeFaceID][lodLvl].x - half_nl_lod;
-			xn = half_nl - -viewPosLists[activeFaceID][lodLvl].x - half_nl_lod;
-			yp = half_nl - viewPosLists[activeFaceID][lodLvl].y - half_nl_lod;
-			yn = half_nl - -viewPosLists[activeFaceID][lodLvl].y - half_nl_lod;
+			xp = halfClipmapSize - viewPosLists[activeFaceID][lodLvl].x - half_nl_lod;
+			xn = halfClipmapSize - -viewPosLists[activeFaceID][lodLvl].x - half_nl_lod;
+			yp = halfClipmapSize - viewPosLists[activeFaceID][lodLvl].y - half_nl_lod;
+			yn = halfClipmapSize - -viewPosLists[activeFaceID][lodLvl].y - half_nl_lod;
 
 			if (Math::Abs(xp) <= eps)
 				camPosOfFaces[adjacentFaceTable[activeFaceID][0]].x += 2 * lodLvlPow;
@@ -427,7 +428,7 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 	}
 
 	// remove cracks between adjacent faces
-	{
+	if (maxLodLvl > 2) {
 		int xpFaceIdx, xnFaceIdx, ypFaceIdx, ynFaceIdx;
 		xpFaceIdx = adjacentFaceTable[activeFaceID][0];
 		xnFaceIdx = adjacentFaceTable[activeFaceID][1];
@@ -435,16 +436,17 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 		ynFaceIdx = adjacentFaceTable[activeFaceID][3];
 
 		int nl = m_N - 1;
-		float lodLvlPow = 0.5;//Math::Pow(2, -lodLvl);
+		float lodLvlPow = 1;//Math::Pow(2, -lodLvl);
 		float half_nl = nl / 2;
 		float half_nl_lod = half_nl * lodLvlPow;
 		float eps = 0.5 + 1e-3; //why 0.5???
+		float halfClipmapSize = m_ClipmapSize / 2;
 
 		float xp, xn, yp, yn;
-		xp = half_nl - viewPosLists[activeFaceID][0].x - half_nl_lod;
-		xn = half_nl - -viewPosLists[activeFaceID][0].x - half_nl_lod;
-		yp = half_nl - viewPosLists[activeFaceID][0].y - half_nl_lod;
-		yn = half_nl - -viewPosLists[activeFaceID][0].y - half_nl_lod;
+		xp = halfClipmapSize - viewPosLists[activeFaceID][0].x - half_nl_lod;
+		xn = halfClipmapSize - -viewPosLists[activeFaceID][0].x - half_nl_lod;
+		yp = halfClipmapSize - viewPosLists[activeFaceID][0].y - half_nl_lod;
+		yn = halfClipmapSize - -viewPosLists[activeFaceID][0].y - half_nl_lod;
 
 		if (xp <= eps && yp <= eps) {
 			if (viewPosLists[ypFaceIdx][0].y > viewPosLists[xpFaceIdx][0].x)
