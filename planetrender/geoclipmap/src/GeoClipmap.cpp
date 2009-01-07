@@ -35,7 +35,7 @@ GeoClipmapApp::~GeoClipmapApp(void)
 //-------------------------------------------------------------------------------------
 void GeoClipmapApp::createScene(void)
 {
-	GeoClipmapCube* gcmcube = new GeoClipmapCube(25, 0, 15, mSceneMgr, mCamera);
+	GeoClipmapCube* gcmcube = new GeoClipmapCube(200, 0, 31, mSceneMgr, mCamera);
 	SceneNode* cubeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("CubeNode", Vector3(-10, 0, 0));
 	cubeNode->attachObject(gcmcube);
 
