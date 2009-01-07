@@ -9,15 +9,15 @@
 using namespace Ogre;
 
 GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, int n, SceneManager* sceneMgr, Camera* camera) :
-	m_N(n),
-	m_SceneMgr(sceneMgr),
-	m_Camera(camera),
-	m_Radius(radius),
-	m_MaxHeight(maxHeight),
-	m_SemiEdgeLen(radius * Math::Cos(Degree(45))),
-	m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
+m_N(n),
+m_SceneMgr(sceneMgr),
+m_Camera(camera),
+m_Radius(radius),
+m_MaxHeight(maxHeight),
+m_SemiEdgeLen(radius * Math::Cos(Degree(45))),
+m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
 {
-	m_ClipmapSize = 2 * (m_N - 1); // this is wrong, just a replacement value for debug
+	m_ClipmapSize = 1 * (m_N - 1); // this is wrong, just a replacement value for debug
 	m_ResNamePrefix = StringConverter::toString(reinterpret_cast<unsigned long>(this)) + "_";
 
 	// create the patches
@@ -226,7 +226,10 @@ void GeoClipmapCube::removeBlockMeshes() const
 
 inline int roundup(float n)
 {
-	return (n + 0.5);
+	if (n >= 0)
+		return (n + 0.5);
+	else
+		return (n - 0.5);
 }
 
 inline int sign(float n)
@@ -242,206 +245,350 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 	Matrix4 matLocalInv = _getParentNodeFullTransform().inverse();
 
 	Vector3 camPosLocal = matLocalInv * m_Camera->getPosition();
+
 	// scale it from geo space to clipmap space
 	camPosLocal = camPosLocal / m_SemiEdgeLen * (m_ClipmapSize / 2.0);
 
-	int faceID = -1;
+	int activeFaceID = -1;
 
 	// first part, find the active face
 	if (Math::Abs(camPosLocal.x) > Math::Abs(camPosLocal.y)) {
 		if (Math::Abs(camPosLocal.x) > Math::Abs(camPosLocal.z)) {
 			if (camPosLocal.x >= 0) {
-				faceID = 0;
+				activeFaceID = 0;
 			} else {
-				faceID = 1;
+				activeFaceID = 1;
 			}
 		} else {
 			if (camPosLocal.z >= 0) {
-				faceID = 4;
+				activeFaceID = 4;
 			} else {
-				faceID = 5;
+				activeFaceID = 5;
 			}
 		}
 	} else {
 		if (Math::Abs(camPosLocal.y) > Math::Abs(camPosLocal.z)) {
 			if (camPosLocal.y >= 0) {
-				faceID = 2;
+				activeFaceID = 2;
 			} else {
-				faceID = 3;
+				activeFaceID = 3;
 			}
 		} else {
 			if (camPosLocal.z >= 0) {
-				faceID = 4;
+				activeFaceID = 4;
 			} else {
-				faceID = 5;
+				activeFaceID = 5;
 			}
 		}
 	}
 
+	static int adjacentFaceTable[6][4] = {
+		{5,	4,	2,	3},
+		{4,	5,	2,	3},
+		{0,	1,	5,	4},
+		{0,	1,	4,	5},
+		{0,	1,	2,	3},
+		{1,	0,	2,	3}
+	};
+
 	// find out the lod level
-	int maxLodLvl = 3;
+	int maxLodLvl = 5;
 	std::vector<Vector2> viewPosLists[6];
-	
+
 	// resize the view post lists
 	for (int i = 0; i < 6; i++)
 	{
 		viewPosLists[i].resize(maxLodLvl);
 	}
-	
-	bool updated = false;
 
+	Vector2 camPosOfFaces[6];
+
+	// init the view pos of every faces
+	switch (activeFaceID)
+	{
+	case 0:
+		camPosOfFaces[0].x = -camPosLocal.z * m_ClipmapSize / 2.0 / camPosLocal.x;
+		camPosOfFaces[0].y = camPosLocal.y * m_ClipmapSize / 2.0 / camPosLocal.x;
+		break;
+	case 1:
+		camPosOfFaces[0].x = camPosLocal.z * m_ClipmapSize / 2.0 / -camPosLocal.x;
+		camPosOfFaces[0].y = camPosLocal.y * m_ClipmapSize / 2.0 / -camPosLocal.x;
+		break;
+	case 2:
+		camPosOfFaces[0].x = camPosLocal.x * m_ClipmapSize / 2.0 / camPosLocal.y;
+		camPosOfFaces[0].y = -camPosLocal.z * m_ClipmapSize / 2.0 / camPosLocal.y;
+		break;
+	case 3:
+		camPosOfFaces[0].x = camPosLocal.x * m_ClipmapSize / 2.0 / -camPosLocal.y;
+		camPosOfFaces[0].y = camPosLocal.z * m_ClipmapSize / 2.0 / -camPosLocal.y;
+		break;
+	case 4:
+		camPosOfFaces[0].x = camPosLocal.x * m_ClipmapSize / 2.0 / camPosLocal.z;
+		camPosOfFaces[0].y = camPosLocal.y * m_ClipmapSize / 2.0 / camPosLocal.z;
+		break;
+	case 5:
+		camPosOfFaces[0].x = -camPosLocal.x * m_ClipmapSize / 2.0 / -camPosLocal.z;
+		camPosOfFaces[0].y = camPosLocal.y * m_ClipmapSize / 2.0 / -camPosLocal.z;
+		break;
+	}
+	for (int i = 1; i < 6; i++)
+	{
+		camPosOfFaces[i] = camPosOfFaces[0];
+	}
+
+	int maxLodLvlAdjacent[6];
+	memset(maxLodLvlAdjacent, 0, sizeof(maxLodLvlAdjacent));
+	maxLodLvlAdjacent[activeFaceID] = maxLodLvl - 1;
+
+	bool updated = false;
+	// now calculate the view pos at every lod level of active face first
+	// also calculate the offset of the adjacent faces
 	for (int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++)
 	{
-		switch (faceID)
-		{
-		case 0:
-			viewPosLists[faceID][lodLvl].x = -camPosLocal.z * m_ClipmapSize / 2 / camPosLocal.x;
-			viewPosLists[faceID][lodLvl].y = camPosLocal.y * m_ClipmapSize / 2 / camPosLocal.x;
-			break;
-		case 1:
-			viewPosLists[faceID][lodLvl].x = camPosLocal.z * m_ClipmapSize / 2 / -camPosLocal.x;
-			viewPosLists[faceID][lodLvl].y = camPosLocal.y * m_ClipmapSize / 2 / -camPosLocal.x;
-			break;
-		case 2:
-			viewPosLists[faceID][lodLvl].x = camPosLocal.x * m_ClipmapSize / 2 / camPosLocal.y;
-			viewPosLists[faceID][lodLvl].y = -camPosLocal.z * m_ClipmapSize / 2 / camPosLocal.y;
-			break;
-		case 3:
-			viewPosLists[faceID][lodLvl].x = camPosLocal.x * m_ClipmapSize / 2 / -camPosLocal.y;
-			viewPosLists[faceID][lodLvl].y = camPosLocal.z * m_ClipmapSize / 2 / -camPosLocal.y;
-			break;
-		case 4:
-			viewPosLists[faceID][lodLvl].x = camPosLocal.x * m_ClipmapSize / 2 / camPosLocal.z;
-			viewPosLists[faceID][lodLvl].y = camPosLocal.y * m_ClipmapSize / 2 / camPosLocal.z;
-			break;
-		case 5:
-			viewPosLists[faceID][lodLvl].x = -camPosLocal.x * m_ClipmapSize / 2 / -camPosLocal.z;
-			viewPosLists[faceID][lodLvl].y = camPosLocal.y * m_ClipmapSize / 2 / -camPosLocal.z;
-			break;
-		}
 		if (lodLvl == 0) {
-			viewPosLists[faceID][lodLvl].x = roundup(viewPosLists[faceID][lodLvl].x);
-			viewPosLists[faceID][lodLvl].y = roundup(viewPosLists[faceID][lodLvl].y);
+			viewPosLists[activeFaceID][lodLvl].x = roundup(camPosOfFaces[activeFaceID].x * Math::Pow(2, lodLvl)) / Math::Pow(2, lodLvl);
+			viewPosLists[activeFaceID][lodLvl].y = roundup(camPosOfFaces[activeFaceID].y * Math::Pow(2, lodLvl)) / Math::Pow(2, lodLvl);
 		} else {
-			Vector2 offsetSign = viewPosLists[faceID][lodLvl] - viewPosLists[faceID][lodLvl - 1];
+			Vector2 offsetSign = camPosOfFaces[activeFaceID] - viewPosLists[activeFaceID][lodLvl - 1];
 			offsetSign.x = sign(offsetSign.x);
 			offsetSign.y = sign(offsetSign.y);
 
 			Vector2 offsetMag = Vector2(Math::Pow(2, -lodLvl));
 
 			Vector2 offset = offsetSign * offsetMag;
-			viewPosLists[faceID][lodLvl] = viewPosLists[faceID][lodLvl - 1] + offset;
+			viewPosLists[activeFaceID][lodLvl] = viewPosLists[activeFaceID][lodLvl - 1] + offset;
+
+			// Ensure continuous lod level
+			int nl = m_N - 1;
+			float lodLvlPow = Math::Pow(2, -lodLvl);
+			float half_nl = nl / 2;
+			float half_nl_lod = half_nl * lodLvlPow;
+			float eps = 1e-3;
+
+			float xp, xn, yp, yn;
+			xp = half_nl - viewPosLists[activeFaceID][lodLvl].x - half_nl_lod;
+			xn = half_nl - -viewPosLists[activeFaceID][lodLvl].x - half_nl_lod;
+			yp = half_nl - viewPosLists[activeFaceID][lodLvl].y - half_nl_lod;
+			yn = half_nl - -viewPosLists[activeFaceID][lodLvl].y - half_nl_lod;
+
+			if (Math::Abs(xp) <= eps)
+				camPosOfFaces[adjacentFaceTable[activeFaceID][0]].x += 2 * lodLvlPow;
+			if (Math::Abs(xn) <= eps)
+				camPosOfFaces[adjacentFaceTable[activeFaceID][1]].x -= 2 * lodLvlPow;
+			if (Math::Abs(yp) <= eps)
+				camPosOfFaces[adjacentFaceTable[activeFaceID][2]].y += 2 * lodLvlPow;
+			if (Math::Abs(yn) <= eps)
+				camPosOfFaces[adjacentFaceTable[activeFaceID][3]].y -= 2 * lodLvlPow;
+
+			if (xp <= eps)
+				maxLodLvlAdjacent[adjacentFaceTable[activeFaceID][0]] = lodLvl;
+			if (xn <= eps)
+				maxLodLvlAdjacent[adjacentFaceTable[activeFaceID][1]] = lodLvl;
+			if (yp <= eps)
+				maxLodLvlAdjacent[adjacentFaceTable[activeFaceID][2]] = lodLvl;
+			if (yn <= eps)
+				maxLodLvlAdjacent[adjacentFaceTable[activeFaceID][3]] = lodLvl;
+
+			const std::vector<Vector2>& oldViewPosList = m_Patches[activeFaceID]->getViewPosList();
+			if (oldViewPosList.size() <= lodLvl) {
+				updated = true;
+				continue;
+			}
+
+			Vector2 oldViewPos = oldViewPosList[lodLvl];
+			if ((oldViewPos - viewPosLists[activeFaceID][lodLvl]).length() > 1)
+				updated = true;
 		}
-		const std::vector<Vector2>& oldViewPosList = m_Patches[faceID]->getViewPosList();
-		if (oldViewPosList.size() <= lodLvl) {
-			updated = true;
-			continue;
-		}
-		Vector2 oldViewPos = oldViewPosList[lodLvl];
-		if ((oldViewPos - viewPosLists[faceID][lodLvl]).length() > 1)
-			updated = true;
 	}
 
+	// update is not needed, return
 	if (!updated) return;
 
-	// then calculate the uv for the active face for all lod levels
+	// now, calculate the view position of adjacent faces
+	for(int i = 0; i < 6; i++)
+	{
+		if (i == activeFaceID) continue;
+		for (int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++)
+		{
+			if (lodLvl == 0) {
+				viewPosLists[i][lodLvl].x = roundup(camPosOfFaces[i].x * Math::Pow(2, lodLvl)) / Math::Pow(2, lodLvl);
+				viewPosLists[i][lodLvl].y = roundup(camPosOfFaces[i].y * Math::Pow(2, lodLvl)) / Math::Pow(2, lodLvl);
+			} else {
+				Vector2 offsetSign = camPosOfFaces[i] - viewPosLists[i][lodLvl - 1];
+				offsetSign.x = sign(offsetSign.x);
+				offsetSign.y = sign(offsetSign.y);
+
+				Vector2 offsetMag = Vector2(Math::Pow(2, -lodLvl));
+
+				Vector2 offset = offsetSign * offsetMag;
+				viewPosLists[i][lodLvl] = viewPosLists[i][lodLvl - 1] + offset;
+			}
+		}
+	}
+
+	// remove cracks between adjacent faces
+	{
+		int xpFaceIdx, xnFaceIdx, ypFaceIdx, ynFaceIdx;
+		xpFaceIdx = adjacentFaceTable[activeFaceID][0];
+		xnFaceIdx = adjacentFaceTable[activeFaceID][1];
+		ypFaceIdx = adjacentFaceTable[activeFaceID][2];
+		ynFaceIdx = adjacentFaceTable[activeFaceID][3];
+
+		int nl = m_N - 1;
+		float lodLvlPow = 0.5;//Math::Pow(2, -lodLvl);
+		float half_nl = nl / 2;
+		float half_nl_lod = half_nl * lodLvlPow;
+		float eps = 0.5 + 1e-3; //why 0.5???
+
+		float xp, xn, yp, yn;
+		xp = half_nl - viewPosLists[activeFaceID][0].x - half_nl_lod;
+		xn = half_nl - -viewPosLists[activeFaceID][0].x - half_nl_lod;
+		yp = half_nl - viewPosLists[activeFaceID][0].y - half_nl_lod;
+		yn = half_nl - -viewPosLists[activeFaceID][0].y - half_nl_lod;
+
+		if (xp <= eps && yp <= eps) {
+			if (viewPosLists[ypFaceIdx][0].y > viewPosLists[xpFaceIdx][0].x)
+				for(int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++) {
+					viewPosLists[xpFaceIdx][lodLvl].x = viewPosLists[ypFaceIdx][lodLvl].y;
+				}
+			else
+				for(int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++) {
+					viewPosLists[ypFaceIdx][lodLvl].y = viewPosLists[xpFaceIdx][lodLvl].x;
+				};
+		}
+
+		if (xp <= eps && yn <= eps) {
+			if (-viewPosLists[ynFaceIdx][0].y > viewPosLists[xpFaceIdx][0].x)
+				for(int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++) {
+					viewPosLists[xpFaceIdx][lodLvl].x = -viewPosLists[ynFaceIdx][lodLvl].y;
+				}
+			else
+				for(int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++) {
+					viewPosLists[ynFaceIdx][lodLvl].y = -viewPosLists[xpFaceIdx][lodLvl].x;
+				};
+		}
+
+		if (xn <= eps && yp <= eps) {
+			if (viewPosLists[ypFaceIdx][0].y > -viewPosLists[xnFaceIdx][0].x)
+				for(int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++) {
+					viewPosLists[xnFaceIdx][lodLvl].x = -viewPosLists[ypFaceIdx][lodLvl].y;
+				}
+			else
+				for(int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++) {
+					viewPosLists[ypFaceIdx][lodLvl].y = -viewPosLists[xnFaceIdx][lodLvl].x;
+				};
+		}
+		if (xn <= eps && yn <= eps) {
+			if (-viewPosLists[ynFaceIdx][0].y > -viewPosLists[xnFaceIdx][0].x)
+				for(int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++) {
+					viewPosLists[xnFaceIdx][lodLvl].x = viewPosLists[ynFaceIdx][lodLvl].y;
+				}
+			else
+				for(int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++) {
+					viewPosLists[ynFaceIdx][lodLvl].y = viewPosLists[xnFaceIdx][lodLvl].x;
+				};
+		}
+	}
+
+	// transform them into correct face spaces
 	for (int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++)
 	{
 		Vector2 st[6];
-		st[faceID].x = viewPosLists[faceID][lodLvl].x;
-		st[faceID].y = viewPosLists[faceID][lodLvl].y;
-		switch (faceID)
+
+		switch (activeFaceID)
 		{
 		case 0:
+			st[0].x = viewPosLists[0][lodLvl].x;
+			st[0].y = viewPosLists[0][lodLvl].y;
 			st[1].x = 0;
 			st[1].y = 0;
-			st[2].x = m_ClipmapSize - st[faceID].y;
-			st[2].y = st[faceID].x;
-			st[3].x = st[faceID].y + m_ClipmapSize;
-			st[3].y = -st[faceID].x;
-			st[4].x = st[faceID].x + m_ClipmapSize;
-			st[4].y = st[faceID].y;
-			st[5].x = st[faceID].x - m_ClipmapSize;
-			st[5].y = st[faceID].y;
+			st[2].x = m_ClipmapSize - viewPosLists[2][lodLvl].y;
+			st[2].y = viewPosLists[2][lodLvl].x;
+			st[3].x = viewPosLists[3][lodLvl].y + m_ClipmapSize;
+			st[3].y = -viewPosLists[3][lodLvl].x;
+			st[4].x = viewPosLists[4][lodLvl].x + m_ClipmapSize;
+			st[4].y = viewPosLists[4][lodLvl].y;
+			st[5].x = viewPosLists[5][lodLvl].x - m_ClipmapSize;
+			st[5].y = viewPosLists[5][lodLvl].y;
 			break;
 		case 1:
 			st[0].x = 0;
 			st[0].y = 0;
-			st[2].x = st[faceID].y - m_ClipmapSize;
-			st[2].y = -st[faceID].x;
-			st[3].x = -m_ClipmapSize - st[faceID].y;
-			st[3].y = st[faceID].x;
-			st[4].x = st[faceID].x - m_ClipmapSize;
-			st[4].y = st[faceID].y;
-			st[5].x = st[faceID].x + m_ClipmapSize;
-			st[5].y = st[faceID].y;
+			st[1].x = viewPosLists[1][lodLvl].x;
+			st[1].y = viewPosLists[1][lodLvl].y;
+			st[2].x = viewPosLists[2][lodLvl].y - m_ClipmapSize;
+			st[2].y = -viewPosLists[2][lodLvl].x;
+			st[3].x = -m_ClipmapSize - viewPosLists[3][lodLvl].y;
+			st[3].y = viewPosLists[3][lodLvl].x;
+			st[4].x = viewPosLists[4][lodLvl].x - m_ClipmapSize;
+			st[4].y = viewPosLists[4][lodLvl].y;
+			st[5].x = viewPosLists[5][lodLvl].x + m_ClipmapSize;
+			st[5].y = viewPosLists[5][lodLvl].y;
 			break;
 		case 2:
-			st[0].x = st[faceID].y;
-			st[0].y = m_ClipmapSize - st[faceID].x;
-			st[1].x = -st[faceID].y;
-			st[1].y = st[faceID].x + m_ClipmapSize;
+			st[0].x = viewPosLists[0][lodLvl].y;
+			st[0].y = m_ClipmapSize - viewPosLists[0][lodLvl].x;
+			st[1].x = -viewPosLists[1][lodLvl].y;
+			st[1].y = viewPosLists[1][lodLvl].x + m_ClipmapSize;
+			st[2].x = viewPosLists[2][lodLvl].x;
+			st[2].y = viewPosLists[2][lodLvl].y;
 			st[3].x = 0;
 			st[3].y = 0;
-			st[4].x = st[faceID].x;
-			st[4].y = st[faceID].y + m_ClipmapSize;
-			st[5].x = -st[faceID].x;
-			st[5].y = m_ClipmapSize - st[faceID].y;
+			st[4].x = viewPosLists[4][lodLvl].x;
+			st[4].y = viewPosLists[4][lodLvl].y + m_ClipmapSize;
+			st[5].x = -viewPosLists[5][lodLvl].x;
+			st[5].y = m_ClipmapSize - viewPosLists[5][lodLvl].y;
 			break;
 		case 3:
-			st[0].x = -st[faceID].y;
-			st[0].y = st[faceID].x - m_ClipmapSize;
-			st[1].x = st[faceID].y;
-			st[1].y = -m_ClipmapSize - st[faceID].x;
+			st[0].x = -viewPosLists[0][lodLvl].y;
+			st[0].y = viewPosLists[0][lodLvl].x - m_ClipmapSize;
+			st[1].x = viewPosLists[1][lodLvl].y;
+			st[1].y = -m_ClipmapSize - viewPosLists[1][lodLvl].x;
 			st[2].x = 0;
 			st[2].y = 0;
-			st[4].x = st[faceID].x;
-			st[4].y = st[faceID].y - m_ClipmapSize;
-			st[5].x = -st[faceID].x;
-			st[5].y = -m_ClipmapSize - st[faceID].y;
+			st[3].x = viewPosLists[3][lodLvl].x;
+			st[3].y = viewPosLists[3][lodLvl].y;
+			st[4].x = viewPosLists[4][lodLvl].x;
+			st[4].y = viewPosLists[4][lodLvl].y - m_ClipmapSize;
+			st[5].x = -viewPosLists[5][lodLvl].x;
+			st[5].y = -m_ClipmapSize - viewPosLists[5][lodLvl].y;
 			break;
 		case 4:
-			st[0].x = st[faceID].x - m_ClipmapSize;
-			st[0].y = st[faceID].y;
-			st[1].x = st[faceID].x + m_ClipmapSize;
-			st[1].y = st[faceID].y;
-			st[2].x = st[faceID].x;
-			st[2].y = st[faceID].y - m_ClipmapSize;
-			st[3].x = st[faceID].x;
-			st[3].y = st[faceID].y + m_ClipmapSize;
+			st[0].x = viewPosLists[0][lodLvl].x - m_ClipmapSize;
+			st[0].y = viewPosLists[0][lodLvl].y;
+			st[1].x = viewPosLists[1][lodLvl].x + m_ClipmapSize;
+			st[1].y = viewPosLists[1][lodLvl].y;
+			st[2].x = viewPosLists[2][lodLvl].x;
+			st[2].y = viewPosLists[2][lodLvl].y - m_ClipmapSize;
+			st[3].x = viewPosLists[3][lodLvl].x;
+			st[3].y = viewPosLists[3][lodLvl].y + m_ClipmapSize;
+			st[4].x = viewPosLists[4][lodLvl].x;
+			st[4].y = viewPosLists[4][lodLvl].y;
 			st[5].x = 0;
 			st[5].y = 0;
 			break;
 		case 5:
-			st[0].x = st[faceID].x + m_ClipmapSize;
-			st[0].y = st[faceID].y;
-			st[1].x = st[faceID].x - m_ClipmapSize;
-			st[1].y = st[faceID].y;
-			st[2].x = -st[faceID].x;
-			st[2].y = m_ClipmapSize - st[faceID].y;
-			st[3].x = -st[faceID].x;
-			st[3].y = -m_ClipmapSize - st[faceID].y;
+			st[0].x = viewPosLists[0][lodLvl].x + m_ClipmapSize;
+			st[0].y = viewPosLists[0][lodLvl].y;
+			st[1].x = viewPosLists[1][lodLvl].x - m_ClipmapSize;
+			st[1].y = viewPosLists[1][lodLvl].y;
+			st[2].x = -viewPosLists[2][lodLvl].x;
+			st[2].y = m_ClipmapSize - viewPosLists[2][lodLvl].y;
+			st[3].x = -viewPosLists[3][lodLvl].x;
+			st[3].y = -m_ClipmapSize - viewPosLists[3][lodLvl].y;
 			st[4].x = 0;
 			st[4].y = 0;
+			st[5].x = viewPosLists[5][lodLvl].x;
+			st[5].y = viewPosLists[5][lodLvl].y;
 			break;
 		}
-		for (int i = 0; i < 6; i++)
-			viewPosLists[i][lodLvl] = st[i];
-	}
-
-	{
 		for(int i = 0; i < 6; i++) {
-			/*std::vector<Vector2> viewPosList(2);
-
-			viewPosList[0] = Vector2(0, 0);
-			viewPosList[1] = Vector2(0.5, 0.5);
-			//viewPosList[2] = Vector2(0.75, 0.75);
-			m_Patches[i]->setViewPosList(viewPosList);
-			
-			*/
-			
-			m_Patches[i]->setViewPosList(viewPosLists[i]);
+			viewPosLists[i][lodLvl] = st[i];
 		}
 	}
 
+	for(int i = 0; i < 6; i++) {	
+		viewPosLists[i].resize(maxLodLvlAdjacent[i] + 1);
+		m_Patches[i]->setViewPosList(viewPosLists[i]);
+	}
 }
