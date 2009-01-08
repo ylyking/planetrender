@@ -265,6 +265,14 @@
 			</File>
 		</Filter>
 		<File
+			RelativePath=".\script\GeoClipmap.cg"
+			>
+		</File>
+		<File
+			RelativePath=".\script\GeoClipmap.material"
+			>
+		</File>
+		<File
 			RelativePath=".\docs\ReadMe.txt"
 			>
 		</File>

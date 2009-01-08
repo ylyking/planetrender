@@ -1,5 +1,6 @@
 #include "GeoClipmapBlock.h"
 #include "GeoClipmapPatch.h"
+#include "GeoClipmapCube.h"
 
 #include <Ogre.h>
 using namespace Ogre;
@@ -16,9 +17,7 @@ GeoClipmapBlock::~GeoClipmapBlock(void)
 
 const MaterialPtr& GeoClipmapBlock::getMaterial(void) const
 {
-	//return mPatch->getDataSource().getMaterial(mDepth);
-	//return MaterialManager::getSingleton().getByName("NoMaterial");
-	return MaterialManager::getSingleton().getByName("NoMaterial");
+	return m_parentPatch.getMat(m_LodLvl);
 }
 
 void GeoClipmapBlock::getRenderOperation(RenderOperation &op)
@@ -32,11 +31,9 @@ void GeoClipmapBlock::getRenderOperation(RenderOperation &op)
 
 void GeoClipmapBlock::computeTransform()
 {
-	Matrix4 matPatchTx, matBlockTx;
-	m_parentPatch.getWorldTransforms(m_LodLvl, &matPatchTx);
-	//matBlockTx.makeTrans(m_parentPatch.getBlockPos(m_PosIdx));
-	matBlockTx.makeTrans(m_Pos.x, m_Pos.y, 0);
-	m_Tx = matPatchTx * matBlockTx;
+	m_parentPatch.getWorldTransforms(m_LodLvl, &m_PatchTx);
+	m_BlockTx.makeTrans(m_Pos.x, m_Pos.y, 0);
+	m_Tx = m_parentMovObj._getParentNodeFullTransform() * m_PatchTx * m_BlockTx;
 }
 
 void GeoClipmapBlock::getWorldTransforms(Matrix4* xform) const
@@ -67,4 +64,27 @@ bool Ogre::GeoClipmapBlock::preRender(SceneManager* sm, RenderSystem* rsys)
 		rsys->addClipPlane(m_parentPatch.getClipPlanes(i));
 	}
 	return true;
+}
+
+void GeoClipmapBlock::_updateCustomGpuParameter(const GpuProgramParameters::AutoConstantEntry &constantEntry, GpuProgramParameters *params) const
+{
+	Matrix4 mat;
+	switch (constantEntry.data)
+	{
+	case 0:
+		params->_writeRawConstant(constantEntry.physicalIndex, m_BlockTx);
+		break;
+	case 1:
+		params->_writeRawConstant(constantEntry.physicalIndex, m_PatchTx);
+		break;
+	case 2:
+		m_parentMovObj.getParentSceneNode()->getWorldTransforms(&mat);
+		params->_writeRawConstant(constantEntry.physicalIndex, mat);
+		break;
+	case 3:
+		params->_writeRawConstant(constantEntry.physicalIndex, reinterpret_cast<const GeoClipmapCube&>(m_parentMovObj).getRadius());
+		break;
+	default:
+		Renderable::_updateCustomGpuParameter(constantEntry, params);
+	}
 }

@@ -1,0 +1,21 @@
+vertex_program GeoClipmapVP cg
+{
+	source GeoClipmap.cg
+	entry_point main_vp
+	profiles vs_3_0 vp40
+	default_params
+	{
+		param_named_auto blockTx custom 0
+		param_named_auto patchTx custom 1
+		param_named_auto cubeTx  custom 2
+		param_named_auto radius  custom 3
+		param_named_auto viewProj viewproj_matrix
+	}
+}
+
+fragment_program GeoClipmapFP cg
+{
+	source GeoClipmap.cg
+	entry_point main_fp
+	profiles ps_3_0 fp40
+}

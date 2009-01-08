@@ -1,4 +1,7 @@
 #include <OgreVector2.h>
+#include <OgreStringConverter.h>
+#include <OgreMaterialManager.h>
+#include <OgreTechnique.h>
 #include "GeoClipmapCube.h"
 #include "GeoClipmapPatch.h"
 
@@ -9,11 +12,12 @@ GeoClipmapPatch::GeoClipmapPatch(const GeoClipmapCube& parent, int faceID) :
 	m_FaceID(faceID),
 	m_ViewPosListUpdated(true)
 {
-	
+	createMat();
 }
 
 GeoClipmapPatch::~GeoClipmapPatch(void)
 {
+	deleteMat();
 }
 
 GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::getBlock(const BlockList::iterator& freeBlockPtr)
@@ -37,7 +41,6 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MX3);
 		else if (i < 16)
 			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_3XM);
-		//(*itBlk)->m_PosIdx = i;
 		(*itBlk)->m_Pos = getBlockPos(i);
 		(*itBlk)->m_LodLvl = lodLvl;
 		itBlk = nextBlock(itBlk);
@@ -222,9 +225,9 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::nextBlock(BlockList::itera
 void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 {
 	if (m_ViewPosListUpdated) {
-		m_LodMatList.resize(m_ViewPosList.size());
+		m_PatchTxMatList.resize(m_ViewPosList.size());
 
-		for(int lodLvl = 0; lodLvl < (int)m_LodMatList.size(); lodLvl++) {
+		for(int lodLvl = 0; lodLvl < (int)m_PatchTxMatList.size(); lodLvl++) {
 			// room for optimization, store the matRing
 			// translate the ring and scale them
 			Matrix4 matRing;
@@ -234,7 +237,7 @@ void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 			Matrix4 faceTx;
 			// mul it to the parent transform
 			m_Parent.getFaceTransformMatrix(m_FaceID, &faceTx);
-			m_LodMatList[lodLvl] = faceTx * matRing;
+			m_PatchTxMatList[lodLvl] = faceTx * matRing;
 		}
 
 		BlockList::iterator itBlk =  m_BlockList.begin();
@@ -306,5 +309,34 @@ Vector2 GeoClipmapPatch::getBlockPos(int blockID)  const
 void GeoClipmapPatch::getWorldTransforms(int lodLvl, Matrix4* mat) const
 {
 	assert(lodLvl >= 0 && lodLvl < m_ViewPosList.size());
-	*mat =  m_LodMatList[lodLvl];
+	*mat =  m_PatchTxMatList[lodLvl];
+}
+
+void GeoClipmapPatch::createMat()
+{
+	String patchNamePrefix = StringConverter::toString((long)this) + "_";
+	for (int lodLvl = 0; lodLvl < m_Parent.getClipmapLevel(); lodLvl++)
+	{
+		m_LodMatList.push_back(MaterialManager::getSingleton().create(
+			patchNamePrefix + StringConverter::toString(lodLvl),
+			ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME));
+		Pass* pass0 = m_LodMatList[lodLvl]->getTechnique(0)->getPass(0);
+		pass0->setVertexProgram("GeoClipmapVP");
+		//pass0->setFragmentProgram("GeoClipmapFP");
+		m_LodMatList[lodLvl]->compile();
+	}
+}
+
+void GeoClipmapPatch::deleteMat()
+{
+	for (int lodLvl = 0; lodLvl < m_Parent.getClipmapLevel(); lodLvl++)
+	{
+		MaterialManager::getSingleton().remove((ResourcePtr)m_LodMatList[lodLvl]);
+	}
+	m_LodMatList.clear();
+}
+
+const MaterialPtr& GeoClipmapPatch::getMat(unsigned int lod) const
+{
+	return m_LodMatList[lod];
 }

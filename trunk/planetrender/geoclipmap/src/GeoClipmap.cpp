@@ -12,7 +12,7 @@ Based on the Example Framework for OGRE
 
 Copyright (c) 2000-2007 The OGRE Team
 For the latest info, see http://www.ogre3d.org/
-
+`
 You may use this sample code for anything you like, it is not covered by the
 LGPL like the rest of the OGRE engine.
 -----------------------------------------------------------------------------
@@ -41,8 +41,8 @@ void GeoClipmapApp::createScene(void)
 
 	Entity* ogreHead = mSceneMgr->createEntity("Head", gcmcube->getMeshName(GeoClipmapCube::GCM_MESH_2XL));
 
-	SceneNode* headNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("HeadNode", Vector3(50, 0, 0));
-	headNode->attachObject(ogreHead);
+	//SceneNode* headNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("HeadNode", Vector3(50, 0, 0));
+	//headNode->attachObject(ogreHead);
 
 	// Set ambient light
 	mSceneMgr->setAmbientLight(ColourValue(0.5, 0.5, 0.5));
@@ -51,7 +51,7 @@ void GeoClipmapApp::createScene(void)
 	Light* l = mSceneMgr->createLight("MainLight");
 	l->setPosition(20,80,50);
 
-	mSceneMgr->showBoundingBoxes(true);
+	//mSceneMgr->showBoundingBoxes(true);
 }
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32

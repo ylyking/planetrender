@@ -17,8 +17,9 @@ namespace Ogre
 		const GeoClipmapCube& m_Parent;
 		int m_FaceID;
 		std::vector<Vector2> m_ViewPosList; // view posititon for different lod lvls
-		std::vector<Matrix4> m_LodMatList; // view posititon for different lod lvls
+		std::vector<Matrix4> m_PatchTxMatList; // tx mat for different lod lvls
 		bool m_ViewPosListUpdated; // update flag
+		std::vector<MaterialPtr> m_LodMatList;
 
 		// Block pools
 		typedef std::list<GeoClipmapBlock*> BlockList;
@@ -34,6 +35,8 @@ namespace Ogre
 		BlockList::iterator placeFinest(int lodLvl, const BlockList::iterator& freeBlockPtr);
 		Vector2 getBlockPos(int blockID) const;
 		BlockList::iterator nextBlock(BlockList::iterator usedBlockPtr);
+		void createMat();
+		void deleteMat();
 	public:
 		GeoClipmapPatch(const GeoClipmapCube& parent, int faceID);
 		~GeoClipmapPatch(void);
@@ -52,5 +55,6 @@ namespace Ogre
 		//// Methods
 		void _updateRenderQueue(RenderQueue* queue);
 		void getWorldTransforms(int lodLvl, Matrix4* mat) const;
+		const MaterialPtr& getMat(unsigned int lod) const;
 	};
 }
