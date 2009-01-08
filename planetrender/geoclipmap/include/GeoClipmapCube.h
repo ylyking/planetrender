@@ -56,6 +56,7 @@ namespace Ogre
 		}
 		//// Methods
 		void getFaceTransformMatrix(int faceID, Matrix4* mat) const;
+		unsigned int getClipmapLevel() const;
 		const Ogre::String& getMeshName(MeshType meshType) const;
 	};
 }

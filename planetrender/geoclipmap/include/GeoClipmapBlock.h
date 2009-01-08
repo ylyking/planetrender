@@ -15,6 +15,7 @@ namespace Ogre
 		const GeoClipmapPatch& m_parentPatch;
 		const MovableObject& m_parentMovObj;
 		Matrix4 m_Tx;
+		Matrix4 m_PatchTx, m_BlockTx;
 	public:
 		GeoClipmapBlock(const GeoClipmapPatch& patch, const MovableObject& movObj);
 		virtual ~GeoClipmapBlock(void);
@@ -31,7 +32,7 @@ namespace Ogre
 		virtual void getWorldTransforms(Matrix4* xform) const;
 		virtual Real getSquaredViewDepth(const Camera *cam) const;
 		virtual const LightList& getLights(void) const;
-		//virtual void _updateCustomGpuParameter(const GpuProgramParameters::AutoConstantEntry &constantEntry, GpuProgramParameters *params) const;
+		virtual void _updateCustomGpuParameter(const GpuProgramParameters::AutoConstantEntry &constantEntry, GpuProgramParameters *params) const;
 		virtual bool preRender(SceneManager*  sm, RenderSystem* rsys);
 		virtual void postRender(SceneManager*  sm, RenderSystem* rsys);
 	};

@@ -1,0 +1,27 @@
+void main_vp
+(
+    float4 position			 : POSITION,
+    out float4 oPosition	 : POSITION,
+    out float4 oColor		 : COLOR,
+    uniform float4x4 blockTx,
+    uniform float4x4 patchTx,
+    uniform float4x4 cubeTx,
+    uniform float	 radius,
+    uniform float4x4 viewProj
+)
+{
+	position = mul(blockTx, position);
+	position = mul(patchTx, position);
+	position.xyz = normalize(position.xyz) * radius;
+	position = mul(cubeTx, position);
+	oPosition = mul(viewProj, position);
+	oColor = float4(1, 0, 1, 1);
+}
+
+void main_fp
+(
+	out float4 oColor		 : COLOR
+)
+{
+	oColor = float4(1, 1, 1, 1);
+}

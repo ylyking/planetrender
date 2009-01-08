@@ -17,7 +17,8 @@ GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, int n, SceneManage
 	m_SemiEdgeLen(radius * Math::Cos(Degree(45))),
 	m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
 {
-	m_ClipmapSize = 2 * (m_N - 1); // this is wrong, just a replacement value for debug
+	m_ClipmapSize = 1 * (m_N - 1)  - 10; // 64;//this is wrong, just a replacement value for debug
+	// correct value of m_ClipmapSize is a even integer > N
 	m_ResNamePrefix = StringConverter::toString(reinterpret_cast<unsigned long>(this)) + "_";
 
 	// create the patches
@@ -58,7 +59,11 @@ void GeoClipmapCube::_updateRenderQueue(RenderQueue* queue)
 	for(int i = 0; i < 6; i++)
 		m_Patches[i]->_updateRenderQueue(queue);
 }
-
+/* *********** VERY SERIOIS PROBLEM:
+THE TRANSFORMATION OF FACE TX SHOULD BE SEPARATED INTO 2 MAT
+THE SOLELY FACE MATRIX
+AND THE CUBE WORLD MATIX
+*/
 void GeoClipmapCube::computeFaceTxMat(Node* parent)
 {
 	// init the transformation matrix
@@ -90,20 +95,29 @@ void GeoClipmapCube::computeFaceTxMat(Node* parent)
 		m_xForm[i].setTrans(m_SemiEdgeLen * trans[i]);
 
 		// combine it with the parent tx
-		m_xForm[i] = _getParentNodeFullTransform() * m_xForm[i];
+		//m_xForm[i] =  m_xForm[i];
 	}
 
 	// finally, update the clip planes, since it is in world space...
-	Plane clipPlanes[4] = {
+	/*Plane clipPlanes[4] = { // old code for rect plane
 		Plane( 1, 0, 0, m_ClipmapSize / 2.0),
 		Plane(-1, 0, 0, m_ClipmapSize / 2.0),
 		Plane( 0, 1, 0, m_ClipmapSize / 2.0),
 		Plane( 0,-1, 0, m_ClipmapSize / 2.0),
+	};*/
+
+	float cp_nelm = Math::InvSqrt(2);
+	float cp_d = m_ClipmapSize / 2.0 * Math::Sin(Degree(45));
+	Plane clipPlanes[4] = {
+		Plane( cp_nelm, 0, cp_nelm, cp_d),
+		Plane(-cp_nelm, 0, cp_nelm, cp_d),
+		Plane( 0, cp_nelm, cp_nelm, cp_d),
+		Plane( 0,-cp_nelm, cp_nelm, cp_d),
 	};
 
 	for(int i = 0; i < 6; i++) {
 		for(int j = 0; j < 4; j++) {
-			m_Patches[i]->setClipPlanes(j, m_xForm[i] * clipPlanes[j]);
+			m_Patches[i]->setClipPlanes(j, _getParentNodeFullTransform() * m_xForm[i] * clipPlanes[j]);
 		}
 	}
 }
@@ -292,7 +306,7 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 	};
 
 	// find out the lod level
-	int maxLodLvl = 5;
+	int maxLodLvl = getClipmapLevel(); // self exclusive
 	std::vector<Vector2> viewPosLists[6];
 
 	// resize the view post lists
@@ -593,4 +607,9 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 		viewPosLists[i].resize(maxLodLvlAdjacent[i] + 1);
 		m_Patches[i]->setViewPosList(viewPosLists[i]);
 	}
+}
+
+unsigned int Ogre::GeoClipmapCube::getClipmapLevel() const
+{
+	return 5; 
 }
