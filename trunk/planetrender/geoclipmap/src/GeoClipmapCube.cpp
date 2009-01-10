@@ -3,21 +3,24 @@
 #include <OgreMesh.h>
 #include <OgreMeshManager.h>
 #include <OgreCamera.h>
-#include "GeoClipmapCube.h"
 #include <vector>
+#include "GeoClipmapCube.h"
+#include "Clipmap.h"
 
 using namespace Ogre;
 
-GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, int n, SceneManager* sceneMgr, Camera* camera) :
-	m_N(n),
+GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, Clipmap* cm) :
 	m_SceneMgr(sceneMgr),
 	m_Camera(camera),
 	m_Radius(radius),
 	m_MaxHeight(maxHeight),
 	m_SemiEdgeLen(radius * Math::Cos(Degree(45))),
-	m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
+	m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45)))),
+	m_Clipmap(cm)
 {
-	m_ClipmapSize = 1 * (m_N - 1)  - 10; // 64;//this is wrong, just a replacement value for debug
+	m_ClipmapSize = cm->getLayerSize(0);//1 * (m_N - 1) ; // 64;//this is wrong, just a replacement value for debug
+	assert(m_ClipmapSize % 2 == 0);
+	m_N = cm->getMaxActiveSize();
 	// correct value of m_ClipmapSize is a even integer > N
 	m_ResNamePrefix = StringConverter::toString(reinterpret_cast<unsigned long>(this)) + "_";
 
@@ -59,11 +62,7 @@ void GeoClipmapCube::_updateRenderQueue(RenderQueue* queue)
 	for(int i = 0; i < 6; i++)
 		m_Patches[i]->_updateRenderQueue(queue);
 }
-/* *********** VERY SERIOIS PROBLEM:
-THE TRANSFORMATION OF FACE TX SHOULD BE SEPARATED INTO 2 MAT
-THE SOLELY FACE MATRIX
-AND THE CUBE WORLD MATIX
-*/
+
 void GeoClipmapCube::computeFaceTxMat(Node* parent)
 {
 	// init the transformation matrix
@@ -93,9 +92,6 @@ void GeoClipmapCube::computeFaceTxMat(Node* parent)
 		// scale
 		// trans
 		m_xForm[i].setTrans(m_SemiEdgeLen * trans[i]);
-
-		// combine it with the parent tx
-		//m_xForm[i] =  m_xForm[i];
 	}
 
 	// finally, update the clip planes, since it is in world space...
@@ -417,7 +413,7 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 	}
 
 	// update is not needed, return
-	if (!updated) return;
+	//if (!updated) return;
 
 	// now, calculate the view position of adjacent faces
 	for(int i = 0; i < 6; i++)
@@ -442,7 +438,7 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 	}
 
 	// remove cracks between adjacent faces
-	if (maxLodLvl > 2) {
+	if (maxLodLvl > 1) {
 		int xpFaceIdx, xnFaceIdx, ypFaceIdx, ynFaceIdx;
 		xpFaceIdx = adjacentFaceTable[activeFaceID][0];
 		xnFaceIdx = adjacentFaceTable[activeFaceID][1];
@@ -611,5 +607,5 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 
 unsigned int Ogre::GeoClipmapCube::getClipmapLevel() const
 {
-	return 5; 
+	return m_Clipmap->getDepth(); 
 }

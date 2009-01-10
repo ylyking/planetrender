@@ -31,9 +31,10 @@ void GeoClipmapBlock::getRenderOperation(RenderOperation &op)
 
 void GeoClipmapBlock::computeTransform()
 {
+	Matrix4 blockTx;
 	m_parentPatch.getWorldTransforms(m_LodLvl, &m_PatchTx);
-	m_BlockTx.makeTrans(m_Pos.x, m_Pos.y, 0);
-	m_Tx = m_parentMovObj._getParentNodeFullTransform() * m_PatchTx * m_BlockTx;
+	blockTx.makeTrans(m_Pos.x, m_Pos.y, 0);
+	m_Tx = m_parentMovObj._getParentNodeFullTransform() * m_PatchTx * blockTx;
 }
 
 void GeoClipmapBlock::getWorldTransforms(Matrix4* xform) const
@@ -69,11 +70,9 @@ bool Ogre::GeoClipmapBlock::preRender(SceneManager* sm, RenderSystem* rsys)
 void GeoClipmapBlock::_updateCustomGpuParameter(const GpuProgramParameters::AutoConstantEntry &constantEntry, GpuProgramParameters *params) const
 {
 	Matrix4 mat;
+	float vx = 0, vy = 0;
 	switch (constantEntry.data)
 	{
-	case 0:
-		params->_writeRawConstant(constantEntry.physicalIndex, m_BlockTx);
-		break;
 	case 1:
 		params->_writeRawConstant(constantEntry.physicalIndex, m_PatchTx);
 		break;
@@ -83,6 +82,19 @@ void GeoClipmapBlock::_updateCustomGpuParameter(const GpuProgramParameters::Auto
 		break;
 	case 3:
 		params->_writeRawConstant(constantEntry.physicalIndex, reinterpret_cast<const GeoClipmapCube&>(m_parentMovObj).getRadius());
+		break;
+	case 4:
+		if (m_LodLvl == 0)
+			params->_writeRawConstant(constantEntry.physicalIndex, (float)reinterpret_cast<const GeoClipmapCube&>(m_parentMovObj).getClipmapSize());
+		else
+			params->_writeRawConstant(constantEntry.physicalIndex, (float)reinterpret_cast<const GeoClipmapCube&>(m_parentMovObj).getN());
+		break;
+	case 5:
+		if (m_LodLvl == 0) {
+			vx = m_parentPatch.getViewPosList()[0].x;
+			vy = m_parentPatch.getViewPosList()[0].y;
+		}
+		params->_writeRawConstant(constantEntry.physicalIndex, Vector4(m_Pos.x, m_Pos.y, vx, vy));
 		break;
 	default:
 		Renderable::_updateCustomGpuParameter(constantEntry, params);

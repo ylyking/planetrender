@@ -204,6 +204,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\Clipmap.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\GeoClipmap.cpp"
 				>
 			</File>
@@ -227,6 +231,10 @@
 			>
 			<File
 				RelativePath=".\include\BaseApplication.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\Clipmap.h"
 				>
 			</File>
 			<File

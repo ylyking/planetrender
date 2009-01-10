@@ -2,8 +2,10 @@
 #include <OgreStringConverter.h>
 #include <OgreMaterialManager.h>
 #include <OgreTechnique.h>
+#include <OgreTextureUnitState.h>
 #include "GeoClipmapCube.h"
 #include "GeoClipmapPatch.h"
+#include "Clipmap.h"
 
 using namespace Ogre;
 
@@ -80,7 +82,6 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_Pos = Vector2(0, -initPos);
 		(*itBlk)->m_LodLvl = lodLvl;
 		itBlk = nextBlock(itBlk);
-
 
 		// Mx3
 		itBlk = getBlock(itBlk);
@@ -320,9 +321,11 @@ void GeoClipmapPatch::createMat()
 		m_LodMatList.push_back(MaterialManager::getSingleton().create(
 			patchNamePrefix + StringConverter::toString(lodLvl),
 			ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME));
-		Pass* pass0 = m_LodMatList[lodLvl]->getTechnique(0)->getPass(0);
-		pass0->setVertexProgram("GeoClipmapVP");
-		//pass0->setFragmentProgram("GeoClipmapFP");
+		Pass* pass = m_LodMatList[lodLvl]->getTechnique(0)->getPass(0);
+		pass->setVertexProgram("GeoClipmapVP");
+		TextureUnitState* tus = pass->createTextureUnitState(m_Parent.getClipmap()->getLayerTexture(lodLvl)->getName());
+		tus->setBindingType(TextureUnitState::BT_VERTEX);
+		//pass->setFragmentProgram("GeoClipmapFP");
 		m_LodMatList[lodLvl]->compile();
 	}
 }
