@@ -3,19 +3,47 @@ void main_vp
     float4 position			 : POSITION,
     out float4 oPosition	 : POSITION,
     out float4 oColor		 : COLOR,
-    uniform float4x4 blockTx,
     uniform float4x4 patchTx,
     uniform float4x4 cubeTx,
     uniform float	 radius,
-    uniform float4x4 viewProj
+    uniform float	 nl, // it is nl for lod != 0, clipmap size fot lod == 0
+	uniform float4	 blockPos, // yz is 0 for lod != 0, viewpos for lod == 0
+    uniform float4x4 viewProj,
+    uniform sampler2D heightmap
 )
 {
-	position = mul(blockTx, position);
-	position = mul(patchTx, position);
-	position.xyz = normalize(position.xyz) * radius;
-	position = mul(cubeTx, position);
-	oPosition = mul(viewProj, position);
-	oColor = float4(1, 0, 1, 1);
+	// in block pos
+	oPosition = position;
+	oPosition.xy += blockPos.xy;
+	
+	// calculate uv
+	float2 uv = oPosition.xy;
+	
+	// fix the uv at lod = 0
+	uv += blockPos.zw;
+	
+	// scale the uv
+	uv *= 2 / nl;
+	
+	// calc alpha
+	float alpha = max(abs(uv.x), abs(uv.y));
+	uv += float2(0.5, 0.5);
+
+	// calc debug color
+	oColor = float4(alpha, alpha, alpha, 1);
+	
+	
+	// in patch space
+	oPosition = mul(patchTx, oPosition);
+	
+	// sphereify
+	oPosition.xyz = normalize(oPosition.xyz) * (radius + radius * 0.3 * tex2D(heightmap, uv));
+	
+	// in world space
+	oPosition = mul(cubeTx, oPosition);
+	
+	// projection
+	oPosition = mul(viewProj, oPosition);	
 }
 
 void main_fp

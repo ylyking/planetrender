@@ -21,7 +21,7 @@ LGPL like the rest of the OGRE engine.
 
 #include "GeoClipmapCube.h"
 #include "GeoClipmap.h"
-
+#include "Clipmap.h"
 
 //-------------------------------------------------------------------------------------
 GeoClipmapApp::GeoClipmapApp(void)
@@ -35,7 +35,13 @@ GeoClipmapApp::~GeoClipmapApp(void)
 //-------------------------------------------------------------------------------------
 void GeoClipmapApp::createScene(void)
 {
-	GeoClipmapCube* gcmcube = new GeoClipmapCube(200, 0, 31, mSceneMgr, mCamera);
+	Clipmap* cm = new Clipmap(4, 128, 127);
+	cm->addTexture("clipmap_129x129.bmp");
+	cm->addTexture("clipmap_257x257.bmp");
+	cm->addTexture("clipmap_513x513.bmp");
+	cm->addTexture("clipmap_1025x1025.bmp");
+
+	GeoClipmapCube* gcmcube = new GeoClipmapCube(300, 0, mSceneMgr, mCamera, cm);
 	SceneNode* cubeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("CubeNode", Vector3(-10, 0, 0));
 	cubeNode->attachObject(gcmcube);
 

@@ -15,7 +15,7 @@ namespace Ogre
 		const GeoClipmapPatch& m_parentPatch;
 		const MovableObject& m_parentMovObj;
 		Matrix4 m_Tx;
-		Matrix4 m_PatchTx, m_BlockTx;
+		Matrix4 m_PatchTx;
 	public:
 		GeoClipmapBlock(const GeoClipmapPatch& patch, const MovableObject& movObj);
 		virtual ~GeoClipmapBlock(void);

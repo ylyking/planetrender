@@ -10,6 +10,8 @@ namespace Ogre
 {
 	class SceneManager;
 	class Camera;
+	class Clipmap;
+
 	class GeoClipmapCube : public MovableObject
 	{
 	public:
@@ -30,6 +32,7 @@ namespace Ogre
 		// AxisAlignedBox of Meshes
 		std::map<MeshType, AxisAlignedBox> m_MeshAABBs;
 		Ogre::String m_ResNamePrefix;
+		Clipmap* m_Clipmap;
 		//// Methods
 		void createGrids();
 		void createGrid(MeshType meshType, int vertexCountX, int vertexCountY);
@@ -38,12 +41,13 @@ namespace Ogre
 		void computePatchViewpoints();
 	public:
 		//// Con/Destrs
-		GeoClipmapCube(float radius, float maxHeight, int n, SceneManager* sceneMgr, Camera* camera);
+		GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, Clipmap* cm);
 		virtual ~GeoClipmapCube(void);
 		//// Getters/setters
 		inline float getRadius() const { return m_Radius; }		
 		inline int getN() const { return m_N; }
 		int getClipmapSize() const { return m_ClipmapSize; }
+		Clipmap* getClipmap() const { return m_Clipmap; }
 		//// Override
 		virtual const String& getMovableType(void) const;
 		virtual const AxisAlignedBox& getBoundingBox(void) const;
