@@ -239,6 +239,10 @@ void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 			// mul it to the parent transform
 			m_Parent.getFaceTransformMatrix(m_FaceID, &faceTx);
 			m_PatchTxMatList[lodLvl] = faceTx * matRing;
+			
+			// update texture
+			if (lodLvl > 0)
+				m_Parent.getClipmap()->updateVisibleArea(lodLvl, m_ViewPosList[lodLvl]);
 		}
 
 		BlockList::iterator itBlk =  m_BlockList.begin();
@@ -316,7 +320,7 @@ void GeoClipmapPatch::getWorldTransforms(int lodLvl, Matrix4* mat) const
 void GeoClipmapPatch::createMat()
 {
 	String patchNamePrefix = StringConverter::toString((long)this) + "_";
-	for (int lodLvl = 0; lodLvl < m_Parent.getClipmapLevel(); lodLvl++)
+	for (int lodLvl = 0; lodLvl < m_Parent.getClipmapDepth(); lodLvl++)
 	{
 		m_LodMatList.push_back(MaterialManager::getSingleton().create(
 			patchNamePrefix + StringConverter::toString(lodLvl),
@@ -325,6 +329,7 @@ void GeoClipmapPatch::createMat()
 		pass->setVertexProgram("GeoClipmapVP");
 		TextureUnitState* tus = pass->createTextureUnitState(m_Parent.getClipmap()->getLayerTexture(lodLvl)->getName());
 		tus->setBindingType(TextureUnitState::BT_VERTEX);
+		tus->setTextureFiltering(FO_POINT, FO_POINT,FO_NONE);
 		//pass->setFragmentProgram("GeoClipmapFP");
 		m_LodMatList[lodLvl]->compile();
 	}
@@ -332,7 +337,7 @@ void GeoClipmapPatch::createMat()
 
 void GeoClipmapPatch::deleteMat()
 {
-	for (int lodLvl = 0; lodLvl < m_Parent.getClipmapLevel(); lodLvl++)
+	for (int lodLvl = 0; lodLvl < m_Parent.getClipmapDepth(); lodLvl++)
 	{
 		MaterialManager::getSingleton().remove((ResourcePtr)m_LodMatList[lodLvl]);
 	}
