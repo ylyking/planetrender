@@ -16,7 +16,15 @@ namespace Ogre
 	{
 	public:
 		//// Types
-		enum MeshType {GCM_MESH_MXM = 0, GCM_MESH_MX3, GCM_MESH_3XM, GCM_MESH_2XL, GCM_MESH_LX2, GCM_MESH_COUNT};
+		enum MeshType {GCM_MESH_MXM = 0,
+			GCM_MESH_MX3,
+			GCM_MESH_3XM,
+			GCM_MESH_2XL,
+			GCM_MESH_LX2,
+			GCM_MESH_TFillH,
+			GCM_MESH_TFillV,
+			GCM_MESH_COUNT
+		};
 	private:
 		//// Varibles
 		SceneManager* m_SceneMgr;
@@ -36,6 +44,7 @@ namespace Ogre
 		//// Methods
 		void createGrids();
 		void createGrid(MeshType meshType, int vertexCountX, int vertexCountY);
+		void createTFillingGrid(MeshType meshType, int coarserVertexCount, bool transpose);
 		void removeBlockMeshes() const;
 		void computeFaceTxMat(Node* parent);
 		void computePatchViewpoints();

@@ -48,10 +48,39 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		itBlk = nextBlock(itBlk);
 	}
 
+	int m = (m_Parent.getN() + 1) / 4;
+
+	float ml = m-1;
+
+	// T Fill
+	if (lodLvl > 0) {
+		itBlk = getBlock(itBlk);
+		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_TFillV);
+		(*itBlk)->m_Pos = Vector2(-(2 * ml + 1), 0);
+		(*itBlk)->m_LodLvl = lodLvl;
+		itBlk = nextBlock(itBlk);
+
+		itBlk = getBlock(itBlk);
+		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_TFillV);
+		(*itBlk)->m_Pos = Vector2(2 * ml + 1, 0);
+		(*itBlk)->m_LodLvl = lodLvl;
+		itBlk = nextBlock(itBlk);
+
+		itBlk = getBlock(itBlk);
+		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_TFillH);
+		(*itBlk)->m_Pos = Vector2(0, -(2 * ml + 1));
+		(*itBlk)->m_LodLvl = lodLvl;
+		itBlk = nextBlock(itBlk);
+
+		itBlk = getBlock(itBlk);
+		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_TFillH);
+		(*itBlk)->m_Pos = Vector2(0, 2 * ml + 1);
+		(*itBlk)->m_LodLvl = lodLvl;
+		itBlk = nextBlock(itBlk);
+	}
+
 	if (lodLvl > 0) return itBlk;
 
-	int m = (m_Parent.getN() + 1) / 4;
-	float ml = m-1;
 	int cl = m_Parent.getClipmapSize();
 	
 	float maxCoord = std::max(Math::Abs(m_ViewPosList[0].x), Math::Abs(m_ViewPosList[0].y));
@@ -330,6 +359,7 @@ void GeoClipmapPatch::createMat()
 		TextureUnitState* tus = pass->createTextureUnitState(m_Parent.getClipmap()->getLayerTexture(lodLvl)->getName());
 		tus->setBindingType(TextureUnitState::BT_VERTEX);
 		tus->setTextureFiltering(FO_POINT, FO_POINT,FO_NONE);
+		pass->setCullingMode(CULL_NONE);
 		//pass->setFragmentProgram("GeoClipmapFP");
 		m_LodMatList[lodLvl]->compile();
 	}
