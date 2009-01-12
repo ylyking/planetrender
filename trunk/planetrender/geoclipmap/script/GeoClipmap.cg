@@ -26,19 +26,23 @@ void main_vp
 	uv *= 2 / nl;
 	
 	// calc alpha
-	float alpha = max(abs(uv.x), abs(uv.y));
-	uv += float2(0.5, 0.5);
-
-	// calc debug color
-	oColor = float4(alpha, alpha, alpha, 1);
+	float steepness = 10;
+	float alpha = pow(max(abs(uv.x), abs(uv.y)), steepness);
+	uv = (uv / 2 + float2(0.5, 0.5));
 	
+	// fetch height
+	float h = lerp(tex2D(heightmap, uv).r, tex2D(heightmap, uv).g, alpha);
+	oPosition.z = h * 10;
+	
+	// calc debug color
+	oColor = float4(h, h, h, 1);
 	
 	// in patch space
 	oPosition = mul(patchTx, oPosition);
 	
 	// sphereify
-	oPosition.xyz = normalize(oPosition.xyz) * (radius + radius * 0.3 * tex2D(heightmap, uv));
-	
+	//oPosition.xyz = normalize(oPosition.xyz) * (radius + radius * 0.1 * h);
+
 	// in world space
 	oPosition = mul(cubeTx, oPosition);
 	

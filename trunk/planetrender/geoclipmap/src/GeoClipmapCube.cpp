@@ -18,7 +18,7 @@ GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, SceneManager* scen
 	m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45)))),
 	m_Clipmap(cm)
 {
-	m_ClipmapSize = cm->getLayerSize(0);//1 * (m_N - 1) ; // 64;//this is wrong, just a replacement value for debug
+	m_ClipmapSize = cm->getLayerSize(0) - 1;//1 * (m_N - 1) ; // 64;//this is wrong, just a replacement value for debug
 	assert(m_ClipmapSize % 2 == 0);
 	m_N = cm->getMaxActiveSize();
 	// correct value of m_ClipmapSize is a even integer > N
@@ -59,8 +59,10 @@ Real GeoClipmapCube::getBoundingRadius(void) const
 void GeoClipmapCube::_updateRenderQueue(RenderQueue* queue)
 {
 	computePatchViewpoints();
-	for(int i = 0; i < 6; i++)
+	m_Patches[4]->_updateRenderQueue(queue);
+	for(int i = 6; i < 6; i++)
 		m_Patches[i]->_updateRenderQueue(queue);
+
 }
 
 void GeoClipmapCube::computeFaceTxMat(Node* parent)
@@ -74,7 +76,7 @@ void GeoClipmapCube::computeFaceTxMat(Node* parent)
 	};
 
 	//float clipmapSize = (m_N - 1); // this is wrong, just a replacement value for debug
-	float scaleGeoToClipmap = m_SemiEdgeLen / (m_ClipmapSize / 2.0);
+	float scaleGeoToClipmap = m_SemiEdgeLen / ((m_ClipmapSize) / 2.0);
 
 	rot[0].FromAxes(Vector3( 0, 0,-1), Vector3( 0, 1, 0), Vector3( 1, 0, 0));
 	rot[1].FromAxes(Vector3( 0, 0, 1), Vector3( 0, 1, 0), Vector3(-1, 0, 0));
@@ -103,7 +105,7 @@ void GeoClipmapCube::computeFaceTxMat(Node* parent)
 	};*/
 
 	float cp_nelm = Math::InvSqrt(2);
-	float cp_d = m_ClipmapSize / 2.0 * Math::Sin(Degree(45));
+	float cp_d = (m_ClipmapSize) / 2.0 * Math::Sin(Degree(45));
 	Plane clipPlanes[4] = {
 		Plane( cp_nelm, 0, cp_nelm, cp_d),
 		Plane(-cp_nelm, 0, cp_nelm, cp_d),
@@ -302,7 +304,7 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 	};
 
 	// find out the lod level
-	int maxLodLvl = getClipmapLevel(); // self exclusive
+	int maxLodLvl = getClipmapDepth(); // self exclusive
 	std::vector<Vector2> viewPosLists[6];
 
 	// resize the view post lists
@@ -374,7 +376,7 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 			float half_nl = nl / 2;
 			float half_nl_lod = half_nl * lodLvlPow;
 			float eps = 1e-3;
-			float halfClipmapSize = m_ClipmapSize / 2;
+			float halfClipmapSize = m_ClipmapSize / 2.0;
 
 			float xp, xn, yp, yn;
 			xp = halfClipmapSize - viewPosLists[activeFaceID][lodLvl].x - half_nl_lod;
@@ -450,7 +452,7 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 		float half_nl = nl / 2;
 		float half_nl_lod = half_nl * lodLvlPow;
 		float eps = 0.5 + 1e-3; //why 0.5???
-		float halfClipmapSize = m_ClipmapSize / 2;
+		float halfClipmapSize = m_ClipmapSize / 2.0;
 
 		float xp, xn, yp, yn;
 		xp = halfClipmapSize - viewPosLists[activeFaceID][0].x - half_nl_lod;
@@ -502,7 +504,7 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 		}
 	}
 
-	// transform them into correct face spaces
+	// transform the coord into correct face spaces
 	for (int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++)
 	{
 		Vector2 st[6];
@@ -605,7 +607,8 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 	}
 }
 
-unsigned int Ogre::GeoClipmapCube::getClipmapLevel() const
+unsigned int Ogre::GeoClipmapCube::getClipmapDepth() const
 {
+	//return 1;
 	return m_Clipmap->getDepth(); 
 }

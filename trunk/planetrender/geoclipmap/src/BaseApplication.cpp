@@ -104,7 +104,8 @@ void BaseApplication::createCamera(void)
 	mCamera = mSceneMgr->createCamera("PlayerCam");
 
 	// Position it at 500 in Z direction
-	mCamera->setPosition(Vector3(-225.385, 197.12, 209.506));
+	mCamera->setPosition(Vector3(0, 0, 300));
+	//mCamera->setPosition(Vector3(-225.385, 197.12, 209.506));
 	// Look back along -Z
 	mCamera->lookAt(Vector3(0,0,-300));
 	mCamera->setNearClipDistance(5);

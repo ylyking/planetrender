@@ -13,8 +13,11 @@ namespace Ogre
 			friend class Clipmap;
 		private:
 			Ogre::TexturePtr m_Tex;
+			Ogre::String m_FileName;
+			Clipmap* m_Clipmap;
 		public:
 			ClipmapLayer(unsigned int level, const Ogre::String& fileName, Clipmap* cm);
+			void loadVisibleArea(const Rect& visibleTextureRect, const Rect& heightMapRect);
 		};
 		
 		//// cstr/dstr
@@ -28,6 +31,7 @@ namespace Ogre
 		void addTexture(const Ogre::String& fileName);
 		unsigned int getLayerSize(unsigned int level) const;
 		Ogre::TexturePtr getLayerTexture(unsigned int level) const;
+		void updateVisibleArea(unsigned int level, Vector2 centralUV);
 	private:
 		unsigned int m_Depth, m_BaseSize, m_MaxActiveSize;
 		std::vector<ClipmapLayer*> m_Layers;

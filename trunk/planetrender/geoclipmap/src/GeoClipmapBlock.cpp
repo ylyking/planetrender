@@ -85,7 +85,7 @@ void GeoClipmapBlock::_updateCustomGpuParameter(const GpuProgramParameters::Auto
 		break;
 	case 4:
 		if (m_LodLvl == 0)
-			params->_writeRawConstant(constantEntry.physicalIndex, (float)reinterpret_cast<const GeoClipmapCube&>(m_parentMovObj).getClipmapSize());
+			params->_writeRawConstant(constantEntry.physicalIndex, (float)reinterpret_cast<const GeoClipmapCube&>(m_parentMovObj).getClipmapSize() + 1);
 		else
 			params->_writeRawConstant(constantEntry.physicalIndex, (float)reinterpret_cast<const GeoClipmapCube&>(m_parentMovObj).getN());
 		break;
