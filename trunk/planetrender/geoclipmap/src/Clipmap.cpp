@@ -56,7 +56,8 @@ Clipmap::ClipmapLayer::ClipmapLayer(unsigned int level, const String& fileName, 
 				size,
 				size,
 				0,
-				PF_R8G8B8A8);
+				PF_R8G8B8A8,
+				TU_WRITE_ONLY);
 
 	if (level == 0) {// whole texture should be keep in memory
 		Image layer0Img;
@@ -70,16 +71,19 @@ Clipmap::ClipmapLayer::ClipmapLayer(unsigned int level, const String& fileName, 
 
 void Clipmap::updateVisibleArea(unsigned int level, Vector2 centralUV)
 {
-	centralUV.x += (m_BaseSize-1) / 2 + 1;
-	centralUV.y += (m_BaseSize-1) / 2 + 1;
-
 	int texSize = getLayerSize(level);
 
-	centralUV = centralUV / m_BaseSize * texSize;
+	centralUV = centralUV * (texSize-1) / (m_BaseSize-1);
+
+	centralUV.x += (texSize-1) / 2.0;
+	centralUV.y += (texSize-1) / 2.0;
+
+	centralUV.x = (int)(centralUV.x + 0.5);
+	centralUV.y = (int)(centralUV.y + 0.5);
 
 	int halfActiveSize = (m_MaxActiveSize - 1) / 2;
-	int src_x0 = centralUV.x - 1 - halfActiveSize;
-	int src_y0 = centralUV.y - 1 - halfActiveSize;
+	int src_x0 = centralUV.x - halfActiveSize;
+	int src_y0 = centralUV.y - halfActiveSize;
 	int src_x1 = centralUV.x + halfActiveSize;
 	int src_y1 = centralUV.y + halfActiveSize;
 
@@ -187,7 +191,7 @@ void Clipmap::ClipmapLayer::loadVisibleArea(const Rect& textureBufferRect, const
 	};
 	try {
 		HardwarePixelBufferSharedPtr texBuf = m_Tex->getBuffer();
-		texBuf->lock(HardwareBuffer::LockOptions::HBL_NORMAL);
+		texBuf->lock(HardwareBuffer::LockOptions::HBL_DISCARD);
 		const PixelBox& pixelBox = texBuf->getCurrentLock();
 
 		// load bmp

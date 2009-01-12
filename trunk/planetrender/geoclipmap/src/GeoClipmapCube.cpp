@@ -59,8 +59,8 @@ Real GeoClipmapCube::getBoundingRadius(void) const
 void GeoClipmapCube::_updateRenderQueue(RenderQueue* queue)
 {
 	computePatchViewpoints();
-	m_Patches[4]->_updateRenderQueue(queue);
-	for(int i = 6; i < 6; i++)
+	
+	for(int i = 0; i < 6; i++)
 		m_Patches[i]->_updateRenderQueue(queue);
 
 }
@@ -149,6 +149,8 @@ void GeoClipmapCube::createGrids()
 	createGrid(GCM_MESH_3XM, 3, m);
 	createGrid(GCM_MESH_2XL, 2, l);
 	createGrid(GCM_MESH_LX2, l, 2);
+	createTFillingGrid(GCM_MESH_TFillH, 2 * m, false);
+	createTFillingGrid(GCM_MESH_TFillV, 2 * m, true);
 }
 
 void GeoClipmapCube::createGrid(MeshType meshType, int vertexCountX, int vertexCountY)
@@ -213,6 +215,87 @@ void GeoClipmapCube::createGrid(MeshType meshType, int vertexCountX, int vertexC
 	m_SceneMgr->destroyManualObject(manual);
 }
 
+void GeoClipmapCube::createTFillingGrid(MeshType meshType, int coarserVertexCount, bool transpose)
+{
+	ManualObject* manual = m_SceneMgr->createManualObject("Geoclipmap");
+
+	// Use identity view/projection matrices
+	manual->setUseIdentityProjection(true);
+	manual->setUseIdentityView(true);
+
+	// calc how many vertex and idx are needed
+	int SegX = coarserVertexCount - 1;
+	int BlkMeshWidth = SegX * 2, BlkMeshHeight = 0; // let them be equal, this saves lots of crazy maths
+	int VertexCount = coarserVertexCount + 2 * coarserVertexCount - 1;
+	int RectCount = (coarserVertexCount - 1) * 3;
+	int IdxCount = RectCount * 3;
+
+	manual->estimateVertexCount(VertexCount);
+	manual->estimateIndexCount(IdxCount);
+
+	manual->begin("Geoclipmap", RenderOperation::OT_TRIANGLE_LIST);
+
+	// Set aabb
+	Real eps = 1;
+	if (transpose) {
+		m_MeshAABBs[meshType].setMinimum(-eps, -BlkMeshWidth / 2.0, -m_MaxHeight);
+		m_MeshAABBs[meshType].setMaximum(eps, BlkMeshWidth / 2.0, m_MaxHeight);
+	} else {
+		m_MeshAABBs[meshType].setMinimum(-BlkMeshWidth / 2.0, -eps, -m_MaxHeight);
+		m_MeshAABBs[meshType].setMaximum(BlkMeshWidth / 2.0, eps, m_MaxHeight);
+	}
+
+	// gen vertex
+
+	Vector3 vStart(-BlkMeshWidth / 2.0, 0, 0);
+
+	Vector3 vDeltaX((Real)BlkMeshWidth / SegX, 0, 0);
+	Vector3 v(vStart);
+
+	// gen the coarser vertex first
+	for(int x = 0; x < coarserVertexCount; x++)
+	{
+		if (transpose)
+			manual->position(v.z, v.x, v.y);
+		else
+			manual->position(v);
+		v += vDeltaX;
+	}
+
+	v = vStart; //v.z = 10;
+	vDeltaX = Vector3((Real)BlkMeshWidth / SegX / 2, 0, 0);
+
+	// gen the finer vertex
+	for(int x = 0; x < 2 * coarserVertexCount - 1; x++)
+	{
+		if (transpose)
+			manual->position(v.z, v.x, v.y);
+		else
+			manual->position(v);
+		v += vDeltaX;
+	}
+
+	// gen idx
+	for(int x = 0; x < coarserVertexCount - 1; x++)
+	{	
+		int finerIdx = x * 2 + coarserVertexCount;
+		manual->index(x);
+		manual->index(finerIdx);
+		manual->index(finerIdx + 1);
+		manual->index(x);
+		manual->index(finerIdx + 1);
+		manual->index(x + 1);
+		manual->index(x + 1);
+		manual->index(finerIdx + 1);
+		manual->index(finerIdx + 2);
+	}
+
+	manual->end();
+	manual->convertToMesh(getMeshName(meshType));
+
+	m_SceneMgr->destroyManualObject(manual);
+}
+
 const String& GeoClipmapCube::getMeshName(MeshType meshType) const
 {
 	static const String meshMxMSuffix = "MxM";
@@ -256,7 +339,7 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 {
 	Matrix4 matLocalInv = _getParentNodeFullTransform().inverse();
 
-	Vector3 camPosLocal = matLocalInv * m_Camera->getPosition();
+	Vector3 camPosLocal = matLocalInv * m_Camera->getPosition(); //Vector3(0, 0, 300);
 
 	// scale it from geo space to clipmap space
 	camPosLocal = camPosLocal / m_SemiEdgeLen * (m_ClipmapSize / 2.0);
