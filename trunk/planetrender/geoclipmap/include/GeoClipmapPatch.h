@@ -19,7 +19,7 @@ namespace Ogre
 		std::vector<Vector2> m_ViewPosList; // view posititon for different lod lvls
 		std::vector<Matrix4> m_PatchTxMatList; // tx mat for different lod lvls
 		bool m_ViewPosListUpdated; // update flag
-		std::vector<MaterialPtr> m_LodMatList;
+		std::vector<MaterialPtr> m_NormalMatList, m_TFillMatList;
 
 		// Block pools
 		typedef std::list<GeoClipmapBlock*> BlockList;

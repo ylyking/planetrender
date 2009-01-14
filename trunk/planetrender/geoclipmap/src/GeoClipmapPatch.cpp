@@ -3,6 +3,7 @@
 #include <OgreMaterialManager.h>
 #include <OgreTechnique.h>
 #include <OgreTextureUnitState.h>
+#include <OgreCamera.h>
 #include "GeoClipmapCube.h"
 #include "GeoClipmapPatch.h"
 #include "Clipmap.h"
@@ -45,6 +46,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_3XM);
 		(*itBlk)->m_Pos = getBlockPos(i);
 		(*itBlk)->m_LodLvl = lodLvl;
+		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 		itBlk = nextBlock(itBlk);
 	}
 
@@ -58,24 +60,28 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_TFillV);
 		(*itBlk)->m_Pos = Vector2(-(2 * ml + 1), 0);
 		(*itBlk)->m_LodLvl = lodLvl;
+		(*itBlk)->m_Mat = m_TFillMatList[lodLvl];
 		itBlk = nextBlock(itBlk);
 
 		itBlk = getBlock(itBlk);
 		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_TFillV);
 		(*itBlk)->m_Pos = Vector2(2 * ml + 1, 0);
 		(*itBlk)->m_LodLvl = lodLvl;
+		(*itBlk)->m_Mat = m_TFillMatList[lodLvl];
 		itBlk = nextBlock(itBlk);
 
 		itBlk = getBlock(itBlk);
 		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_TFillH);
 		(*itBlk)->m_Pos = Vector2(0, -(2 * ml + 1));
 		(*itBlk)->m_LodLvl = lodLvl;
+		(*itBlk)->m_Mat = m_TFillMatList[lodLvl];
 		itBlk = nextBlock(itBlk);
 
 		itBlk = getBlock(itBlk);
 		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_TFillH);
 		(*itBlk)->m_Pos = Vector2(0, 2 * ml + 1);
 		(*itBlk)->m_LodLvl = lodLvl;
+		(*itBlk)->m_Mat = m_TFillMatList[lodLvl];
 		itBlk = nextBlock(itBlk);
 	}
 
@@ -104,12 +110,14 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_3XM);
 		(*itBlk)->m_Pos = Vector2(0, initPos);
 		(*itBlk)->m_LodLvl = lodLvl;
+		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 		itBlk = nextBlock(itBlk);
 
 		itBlk = getBlock(itBlk);
 		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_3XM);
 		(*itBlk)->m_Pos = Vector2(0, -initPos);
 		(*itBlk)->m_LodLvl = lodLvl;
+		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 		itBlk = nextBlock(itBlk);
 
 		// Mx3
@@ -117,12 +125,14 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MX3);
 		(*itBlk)->m_Pos = Vector2(initPos, 0);
 		(*itBlk)->m_LodLvl = lodLvl;
+		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 		itBlk = nextBlock(itBlk);
 
 		itBlk = getBlock(itBlk);
 		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MX3);
 		(*itBlk)->m_Pos = Vector2(-initPos, 0);
 		(*itBlk)->m_LodLvl = lodLvl;
+		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 		itBlk = nextBlock(itBlk);
 
 		for(int j = 0; j < 2 + k; j++) {
@@ -131,24 +141,28 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 			(*itBlk)->m_Pos = Vector2(x, y);
 			(*itBlk)->m_LodLvl = lodLvl;
+			(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 			itBlk = nextBlock(itBlk);
 
 			itBlk = getBlock(itBlk);
 			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 			(*itBlk)->m_Pos = Vector2(-x, y);
 			(*itBlk)->m_LodLvl = lodLvl;
+			(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 			itBlk = nextBlock(itBlk);
 
 			itBlk = getBlock(itBlk);
 			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 			(*itBlk)->m_Pos = Vector2(-x, -y);
 			(*itBlk)->m_LodLvl = lodLvl;
+			(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 			itBlk = nextBlock(itBlk);
 
 			itBlk = getBlock(itBlk);
 			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 			(*itBlk)->m_Pos = Vector2(x, -y);
 			(*itBlk)->m_LodLvl = lodLvl;
+			(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 			itBlk = nextBlock(itBlk);
 
 			if (j > 0) {
@@ -156,24 +170,28 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 				(*itBlk)->m_Pos = Vector2(y, x);
 				(*itBlk)->m_LodLvl = lodLvl;
+				(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 				itBlk = nextBlock(itBlk);
 
 				itBlk = getBlock(itBlk);
 				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 				(*itBlk)->m_Pos = Vector2(-y, x);
 				(*itBlk)->m_LodLvl = lodLvl;
+				(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 				itBlk = nextBlock(itBlk);
 
 				itBlk = getBlock(itBlk);
 				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 				(*itBlk)->m_Pos = Vector2(-y, -x);
 				(*itBlk)->m_LodLvl = lodLvl;
+				(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 				itBlk = nextBlock(itBlk);
 
 				itBlk = getBlock(itBlk);
 				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
 				(*itBlk)->m_Pos = Vector2(y, -x);
 				(*itBlk)->m_LodLvl = lodLvl;
+				(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 				itBlk = nextBlock(itBlk);
 			}
 			x += ml;
@@ -196,12 +214,14 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeL(int lodLvl, const B
 	(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_2XL);
 	(*itBlk)->m_Pos = Vector2(Math::Sign(m_ViewPosList[lodLvl].x - m_ViewPosList[lodLvl + 1].x) * pos, 0);
 	(*itBlk)->m_LodLvl = lodLvl;
+	(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 	itBlk = nextBlock(itBlk);
 
 	itBlk = getBlock(itBlk);
 	(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_LX2);
 	(*itBlk)->m_Pos = Vector2(0, Math::Sign(m_ViewPosList[lodLvl].y - m_ViewPosList[lodLvl + 1].y) * pos);
 	(*itBlk)->m_LodLvl = lodLvl;
+	(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 	itBlk = nextBlock(itBlk);
 
 	return itBlk; // return the ptr to next free block
@@ -226,6 +246,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeFinest(int lodLvl, co
 			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_2XL);
 		(*itBlk)->m_Pos = getBlockPos(i);
 		(*itBlk)->m_LodLvl = lodLvl;
+		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
 		itBlk = nextBlock(itBlk);
 	}
 
@@ -270,8 +291,11 @@ void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 			m_PatchTxMatList[lodLvl] = faceTx * matRing;
 			
 			// update texture
-			if (lodLvl > 0)
-				m_Parent.getClipmap()->updateVisibleArea(lodLvl, m_ViewPosList[lodLvl]);
+			if (lodLvl > 0) {
+				m_ViewPosList[lodLvl].y = -m_ViewPosList[lodLvl].y;
+				m_Parent.getClipmap(m_FaceID)->updateVisibleArea(lodLvl, m_ViewPosList[lodLvl]);
+				m_ViewPosList[lodLvl].y = -m_ViewPosList[lodLvl].y;
+			}
 		}
 
 		BlockList::iterator itBlk =  m_BlockList.begin();
@@ -289,7 +313,18 @@ void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 	}
 	
 	for(BlockList::iterator itBlk = m_BlockList.begin(); itBlk != m_BlockList.end(); itBlk++) {
-		queue->addRenderable(*itBlk);
+		// inside plane culling
+		/*if (abs((*itBlk)->m_Pos.x) > m_Parent.getClipmapSize() / 2 ||
+			abs((*itBlk)->m_Pos.y) > m_Parent.getClipmapSize() / 2 )
+			continue;*/
+		// frustum culling
+		// normal direction culling
+		Matrix4 matTx;
+		(*itBlk)->getWorldTransforms(&matTx);
+		Vector4 normal4 = matTx * Vector4(0, 0, 0, 1);
+		Vector3 normal3(normal4.x, normal4.y, normal4.z);
+		if (normal3.dotProduct(m_Parent.getCamera()->getPosition()) > 1e-2)
+			queue->addRenderable(*itBlk);
 	}
 }
 
@@ -351,17 +386,26 @@ void GeoClipmapPatch::createMat()
 	String patchNamePrefix = StringConverter::toString((long)this) + "_";
 	for (int lodLvl = 0; lodLvl < m_Parent.getClipmapDepth(); lodLvl++)
 	{
-		m_LodMatList.push_back(MaterialManager::getSingleton().create(
-			patchNamePrefix + StringConverter::toString(lodLvl),
+		m_NormalMatList.push_back(MaterialManager::getSingleton().create(
+			patchNamePrefix + StringConverter::toString(lodLvl) + "_Normal",
 			ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME));
-		Pass* pass = m_LodMatList[lodLvl]->getTechnique(0)->getPass(0);
+
+		Pass* pass = m_NormalMatList[lodLvl]->getTechnique(0)->getPass(0);
 		pass->setVertexProgram("GeoClipmapVP");
-		TextureUnitState* tus = pass->createTextureUnitState(m_Parent.getClipmap()->getLayerTexture(lodLvl)->getName());
+		//pass->setFragmentProgram("GeoClipmapFP");
+
+		TextureUnitState* tus = pass->createTextureUnitState(m_Parent.getClipmap(m_FaceID)->getLayerTexture(lodLvl)->getName());
 		tus->setBindingType(TextureUnitState::BT_VERTEX);
 		tus->setTextureFiltering(FO_POINT, FO_POINT,FO_NONE);
-		pass->setCullingMode(CULL_NONE);
-		//pass->setFragmentProgram("GeoClipmapFP");
-		m_LodMatList[lodLvl]->compile();
+
+		m_TFillMatList.push_back(m_NormalMatList[lodLvl]->clone
+				(patchNamePrefix + StringConverter::toString(lodLvl) + "_TFill")
+			);
+
+		m_TFillMatList[lodLvl]->getTechnique(0)->getPass(0)->setCullingMode(CULL_NONE);
+
+		m_TFillMatList[lodLvl]->compile();
+		m_NormalMatList[lodLvl]->compile();
 	}
 }
 
@@ -369,12 +413,7 @@ void GeoClipmapPatch::deleteMat()
 {
 	for (int lodLvl = 0; lodLvl < m_Parent.getClipmapDepth(); lodLvl++)
 	{
-		MaterialManager::getSingleton().remove((ResourcePtr)m_LodMatList[lodLvl]);
+		MaterialManager::getSingleton().remove((ResourcePtr)m_NormalMatList[lodLvl]);
 	}
-	m_LodMatList.clear();
-}
-
-const MaterialPtr& GeoClipmapPatch::getMat(unsigned int lod) const
-{
-	return m_LodMatList[lod];
+	m_NormalMatList.clear();
 }
