@@ -17,7 +17,7 @@ GeoClipmapBlock::~GeoClipmapBlock(void)
 
 const MaterialPtr& GeoClipmapBlock::getMaterial(void) const
 {
-	return m_parentPatch.getMat(m_LodLvl);
+	return m_Mat;
 }
 
 void GeoClipmapBlock::getRenderOperation(RenderOperation &op)

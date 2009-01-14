@@ -37,10 +37,11 @@ namespace Ogre
 		Matrix4 m_xForm[6];
 		// Faces
 		GeoClipmapPatch* m_Patches[6];
+		bool m_FaceVisible[6];
 		// AxisAlignedBox of Meshes
 		std::map<MeshType, AxisAlignedBox> m_MeshAABBs;
 		Ogre::String m_ResNamePrefix;
-		Clipmap* m_Clipmap;
+		Clipmap* m_Clipmaps[6];
 		//// Methods
 		void createGrids();
 		void createGrid(MeshType meshType, int vertexCountX, int vertexCountY);
@@ -50,13 +51,14 @@ namespace Ogre
 		void computePatchViewpoints();
 	public:
 		//// Con/Destrs
-		GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, Clipmap* cm);
+		GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, unsigned int detailGridSize);
 		virtual ~GeoClipmapCube(void);
 		//// Getters/setters
 		inline float getRadius() const { return m_Radius; }		
 		inline int getN() const { return m_N; }
 		int getClipmapSize() const { return m_ClipmapSize; }
-		Clipmap* getClipmap() const { return m_Clipmap; }
+		Clipmap* getClipmap(unsigned int faceID) const { return m_Clipmaps[faceID]; }
+		Camera* getCamera() const { return m_Camera; }
 		//// Override
 		virtual const String& getMovableType(void) const;
 		virtual const AxisAlignedBox& getBoundingBox(void) const;

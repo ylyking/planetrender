@@ -9,25 +9,30 @@
 
 using namespace Ogre;
 
-GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, Clipmap* cm) :
+GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, unsigned int detailGridSize) :
 	m_SceneMgr(sceneMgr),
 	m_Camera(camera),
 	m_Radius(radius),
-	m_MaxHeight(maxHeight),
+	m_MaxHeight(maxHeight + radius),
 	m_SemiEdgeLen(radius * Math::Cos(Degree(45))),
-	m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45)))),
-	m_Clipmap(cm)
+	m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
 {
-	m_ClipmapSize = cm->getLayerSize(0) - 1;//1 * (m_N - 1) ; // 64;//this is wrong, just a replacement value for debug
+//	m_ClipmapSize = cm->getLayerSize(0) - 1;//1 * (m_N - 1) ; // 64;//this is wrong, just a replacement value for debug
+	m_ClipmapSize = 129 - 1;
 	assert(m_ClipmapSize % 2 == 0);
-	m_N = cm->getMaxActiveSize();
+	m_N = detailGridSize;
 	// correct value of m_ClipmapSize is a even integer > N
 	m_ResNamePrefix = StringConverter::toString(reinterpret_cast<unsigned long>(this)) + "_";
 
 	// create the patches
 	memset(m_Patches, 0, sizeof(GeoClipmapPatch*)  * 6);
-	for(int i = 0; i < 6; i++)
+	for(int i = 0; i < 6; i++) {
+		m_Clipmaps[i] = new Clipmap(4, m_ClipmapSize + 1, detailGridSize);
+		for(int lod = 0; lod < 5; lod++) {
+			m_Clipmaps[i]->addTexture("marsheightm" + StringConverter::toString(i) + "_" + StringConverter::toString(lod) + ".bmp");
+		}
 		m_Patches[i] = new GeoClipmapPatch(*this, i);
+	}
 
 	// creates meshes
 	createGrids();
@@ -35,8 +40,10 @@ GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, SceneManager* scen
 
 GeoClipmapCube::~GeoClipmapCube(void)
 {
-	for(int i = 0; i < 6; i++)
+	for(int i = 0; i < 6; i++) {
 		delete m_Patches[i];
+		delete m_Clipmaps[i];
+	}
 	removeBlockMeshes();
 }
 
@@ -61,7 +68,8 @@ void GeoClipmapCube::_updateRenderQueue(RenderQueue* queue)
 	computePatchViewpoints();
 	
 	for(int i = 0; i < 6; i++)
-		m_Patches[i]->_updateRenderQueue(queue);
+		if (m_FaceVisible[i])
+			m_Patches[i]->_updateRenderQueue(queue);
 
 }
 
@@ -346,33 +354,44 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 
 	int activeFaceID = -1;
 
+	// mark all faces visible
+	memset(m_FaceVisible, 1, sizeof(m_FaceVisible));
+
 	// first part, find the active face
 	if (Math::Abs(camPosLocal.x) > Math::Abs(camPosLocal.y)) {
 		if (Math::Abs(camPosLocal.x) > Math::Abs(camPosLocal.z)) {
 			if (camPosLocal.x >= 0) {
 				activeFaceID = 0;
+				m_FaceVisible[1] = false;
 			} else {
 				activeFaceID = 1;
+				m_FaceVisible[0] = false;
 			}
 		} else {
 			if (camPosLocal.z >= 0) {
 				activeFaceID = 4;
+				m_FaceVisible[5] = false;
 			} else {
 				activeFaceID = 5;
+				m_FaceVisible[4] = false;
 			}
 		}
 	} else {
 		if (Math::Abs(camPosLocal.y) > Math::Abs(camPosLocal.z)) {
 			if (camPosLocal.y >= 0) {
 				activeFaceID = 2;
+				m_FaceVisible[3] = false;
 			} else {
 				activeFaceID = 3;
+				m_FaceVisible[2] = false;
 			}
 		} else {
 			if (camPosLocal.z >= 0) {
 				activeFaceID = 4;
+				m_FaceVisible[5] = false;
 			} else {
 				activeFaceID = 5;
+				m_FaceVisible[4] = false;
 			}
 		}
 	}
@@ -498,7 +517,7 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 	}
 
 	// update is not needed, return
-	//if (!updated) return;
+	if (!updated) return;
 
 	// now, calculate the view position of adjacent faces
 	for(int i = 0; i < 6; i++)
@@ -693,5 +712,5 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 unsigned int Ogre::GeoClipmapCube::getClipmapDepth() const
 {
 	//return 1;
-	return m_Clipmap->getDepth(); 
+	return m_Clipmaps[0]->getDepth(); 
 }

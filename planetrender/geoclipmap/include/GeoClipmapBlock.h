@@ -21,7 +21,7 @@ namespace Ogre
 		virtual ~GeoClipmapBlock(void);
 		//// Variables
 		String m_MeshName;
-		//int m_PosIdx, 
+		MaterialPtr m_Mat; 
 		int m_LodLvl;
 		Vector2 m_Pos;
 		//// Methods

@@ -144,6 +144,7 @@ void Clipmap::ClipmapLayer::loadVisibleArea(const Rect& textureBufferRect, const
 		int mBytesPerLine, mBPP;
 		inline void bmpPixelSeek(DataStreamPtr stm, int x, int y) {
 			int realy = mBmpHeader.height - y - 1;
+			//int realy = y;
 			stm->seek(mBmpHeader.offset + realy * mBytesPerLine + x * mBPP);
 		};
 		inline char* pixelBufferPixelSeek(const PixelBox& pixelBox, int x, int y) {
