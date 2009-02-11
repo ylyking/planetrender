@@ -35,6 +35,9 @@ void GeoClipmapBlock::computeTransform()
 	m_parentPatch.getWorldTransforms(m_LodLvl, &m_PatchTx);
 	blockTx.makeTrans(m_Pos.x, m_Pos.y, 0);
 	m_Tx = m_parentMovObj._getParentNodeFullTransform() * m_PatchTx * blockTx;
+	Vector4 blockPosInCubeSpace4;
+	blockPosInCubeSpace4 = m_PatchTx * blockTx * Vector4(0, 0, 0, 1);
+	m_BlockPosInCubeSpace = Vector3(blockPosInCubeSpace4.x, blockPosInCubeSpace4.y, blockPosInCubeSpace4.z);
 }
 
 void GeoClipmapBlock::getWorldTransforms(Matrix4* xform) const

@@ -3,13 +3,14 @@ void main_vp
     float4 position			 : POSITION,
     out float4 oPosition	 : POSITION,
     out float4 oColor		 : COLOR,
+    out float  oUV			 : TEXCOORD0,
     uniform float4x4 patchTx,
     uniform float4x4 cubeTx,
     uniform float	 radius,
     uniform float	 nl, // it is nl for lod != 0, clipmap size fot lod == 0
 	uniform float4	 blockPos, // yz is 0 for lod != 0, viewpos for lod == 0
     uniform float4x4 viewProj,
-    uniform sampler2D heightmap
+    uniform sampler2D heightmap : register(s0)
 )
 {
 	// in block pos
@@ -32,11 +33,13 @@ void main_vp
 	uv = (uv / 2 + float2(0.5, 0.5));
 	uv.y = -uv.y;
 	
-	if (alpha > 0.9)
-		alpha = 1;
+	//if (alpha > 0.9)
+	//	alpha = 1;
 	
 	// fetch height
 	float h = lerp(tex2D(heightmap, uv).r, tex2D(heightmap, uv).g, alpha);
+	
+	oUV = h;
 	//oPosition.z = h * 10;
 	
 	// calc debug color
@@ -46,7 +49,7 @@ void main_vp
 	oPosition = mul(patchTx, oPosition);
 	
 	// sphereify
-	oPosition.xyz = normalize(oPosition.xyz) * (radius + 10 * h);// * (radius + radius * 0.5 * h);
+	oPosition.xyz = normalize(oPosition.xyz) * (radius + 25 * h);// * (radius + radius * 0.5 * h);
 
 	// in world space
 	oPosition = mul(cubeTx, oPosition);
@@ -57,8 +60,10 @@ void main_vp
 
 void main_fp
 (
-	out float4 oColor		 : COLOR
+	float uv					  : TEXCOORD0,
+	out float4 oColor			  : COLOR,
+	uniform sampler1D heightScale : register(s1)
 )
 {
-	oColor = float4(1, 1, 1, 1);
+	oColor = tex1D(heightScale, uv);
 }

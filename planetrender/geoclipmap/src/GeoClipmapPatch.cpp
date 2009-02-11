@@ -4,6 +4,7 @@
 #include <OgreTechnique.h>
 #include <OgreTextureUnitState.h>
 #include <OgreCamera.h>
+#include <OgreNode.h>
 #include "GeoClipmapCube.h"
 #include "GeoClipmapPatch.h"
 #include "Clipmap.h"
@@ -312,6 +313,8 @@ void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 		m_ViewPosListUpdated = false;
 	}
 	
+	Vector3 vCamInCubeSpace = m_Parent.getCamera()->getPosition() - m_Parent.getParentNode()->getPosition();
+
 	for(BlockList::iterator itBlk = m_BlockList.begin(); itBlk != m_BlockList.end(); itBlk++) {
 		// inside plane culling
 		/*if (abs((*itBlk)->m_Pos.x) > m_Parent.getClipmapSize() / 2 ||
@@ -319,11 +322,7 @@ void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 			continue;*/
 		// frustum culling
 		// normal direction culling
-		Matrix4 matTx;
-		(*itBlk)->getWorldTransforms(&matTx);
-		Vector4 normal4 = matTx * Vector4(0, 0, 0, 1);
-		Vector3 normal3(normal4.x, normal4.y, normal4.z);
-		if (normal3.dotProduct(m_Parent.getCamera()->getPosition()) > 1e-2)
+		if ((*itBlk)->m_BlockPosInCubeSpace.dotProduct(vCamInCubeSpace) > 0)
 			queue->addRenderable(*itBlk);
 	}
 }
@@ -392,12 +391,18 @@ void GeoClipmapPatch::createMat()
 
 		Pass* pass = m_NormalMatList[lodLvl]->getTechnique(0)->getPass(0);
 		pass->setVertexProgram("GeoClipmapVP");
-		//pass->setFragmentProgram("GeoClipmapFP");
+		pass->setFragmentProgram("GeoClipmapFP");
 
-		TextureUnitState* tus = pass->createTextureUnitState(m_Parent.getClipmap(m_FaceID)->getLayerTexture(lodLvl)->getName());
+		TextureUnitState* tus;
+
+		
+
+		tus = pass->createTextureUnitState(m_Parent.getClipmap(m_FaceID)->getLayerTexture(lodLvl)->getName());
 		tus->setBindingType(TextureUnitState::BT_VERTEX);
-		tus->setTextureFiltering(FO_POINT, FO_POINT,FO_NONE);
-
+		
+		tus = pass->createTextureUnitState("mars_h.bmp");
+		//tus->setTextureFiltering(FO_POINT, FO_POINT,FO_NONE);
+		
 		m_TFillMatList.push_back(m_NormalMatList[lodLvl]->clone
 				(patchNamePrefix + StringConverter::toString(lodLvl) + "_TFill")
 			);
