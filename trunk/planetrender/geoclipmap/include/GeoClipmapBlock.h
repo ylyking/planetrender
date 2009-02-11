@@ -24,6 +24,7 @@ namespace Ogre
 		MaterialPtr m_Mat; 
 		int m_LodLvl;
 		Vector2 m_Pos;
+		Vector3 m_BlockPosInCubeSpace;
 		//// Methods
 		void computeTransform();
 		// override

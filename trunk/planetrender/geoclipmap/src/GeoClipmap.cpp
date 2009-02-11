@@ -41,7 +41,7 @@ void GeoClipmapApp::createScene(void)
 	cm->addTexture("clipmap_513x513.bmp");
 	cm->addTexture("clipmap_1025x1025.bmp");*/
 
-	GeoClipmapCube* gcmcube = new GeoClipmapCube(100, 0, mSceneMgr, mCamera, 127);
+	GeoClipmapCube* gcmcube = new GeoClipmapCube(100, 0, mSceneMgr, mCamera, 63);
 	SceneNode* cubeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("CubeNode", Vector3(-10, 0, 0));
 	cubeNode->attachObject(gcmcube);
 

@@ -78,8 +78,8 @@ void Clipmap::updateVisibleArea(unsigned int level, Vector2 centralUV)
 	centralUV.x += (texSize-1) / 2.0;
 	centralUV.y += (texSize-1) / 2.0;
 
-	centralUV.x = (int)(centralUV.x + 0.5);
-	centralUV.y = (int)(centralUV.y + 0.5);
+	/*centralUV.x = (int)(centralUV.x + 0.5);
+	centralUV.y = (int)(centralUV.y + 0.5);*/ // must be disabled, the +0.5 is wrong, fucking wrong, I wasted a night to track it down! fuck!!!!
 
 	int halfActiveSize = (m_MaxActiveSize - 1) / 2;
 	int src_x0 = centralUV.x - halfActiveSize;
