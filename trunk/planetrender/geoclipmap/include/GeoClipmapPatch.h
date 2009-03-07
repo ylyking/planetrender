@@ -12,19 +12,17 @@ namespace Ogre
 
 	class GeoClipmapPatch
 	{
-	private:
 		//// Variables
+	private:
 		const GeoClipmapCube& m_Parent;
 		int m_FaceID;
-		std::vector<Vector2> m_ViewPosList; // view posititon for different lod lvls
+		std::vector<Vector2> m_ViewPosList; // view position for different lod lvls
 		std::vector<Matrix4> m_PatchTxMatList; // tx mat for different lod lvls
 		bool m_ViewPosListUpdated; // update flag
 		std::vector<MaterialPtr> m_NormalMatList, m_TFillMatList;
-
 		// Block pools
 		typedef std::list<GeoClipmapBlock*> BlockList;
 		BlockList m_BlockList;
-
 		// Clip plane coeff.
 		Plane m_ClipPlanes[4];
 
@@ -40,6 +38,7 @@ namespace Ogre
 	public:
 		GeoClipmapPatch(const GeoClipmapCube& parent, int faceID);
 		~GeoClipmapPatch(void);
+
 		//// getters/ setters
 		const std::vector<Vector2>& getViewPosList() const { return m_ViewPosList; }
 		void setViewPosList(const std::vector<Vector2>& val) { m_ViewPosListUpdated = true; m_ViewPosList = val; }
