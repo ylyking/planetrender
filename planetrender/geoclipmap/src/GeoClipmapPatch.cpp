@@ -316,14 +316,34 @@ void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 	Vector3 vCamInCubeSpace = m_Parent.getCamera()->getPosition() - m_Parent.getParentNode()->getPosition();
 
 	for(BlockList::iterator itBlk = m_BlockList.begin(); itBlk != m_BlockList.end(); itBlk++) {
-		// inside plane culling
-		/*if (abs((*itBlk)->m_Pos.x) > m_Parent.getClipmapSize() / 2 ||
-			abs((*itBlk)->m_Pos.y) > m_Parent.getClipmapSize() / 2 )
-			continue;*/
-		// frustum culling
 		// normal direction culling
-		if ((*itBlk)->m_BlockPosInCubeSpace.dotProduct(vCamInCubeSpace) > 0)
-			queue->addRenderable(*itBlk);
+		if ((*itBlk)->m_BlockPosInCubeSpace.dotProduct(vCamInCubeSpace) < -1e-3)
+		continue;
+
+		int mLod = 1 << ((*itBlk)->m_LodLvl);
+		// inside plane culling
+		Vector2 blockPosInPatchSpace = (*itBlk)->m_Pos / mLod + m_ViewPosList[(*itBlk)->m_LodLvl];
+		Vector2 blockMinCornerPosInPatchSpace;
+		blockMinCornerPosInPatchSpace.x = Math::Abs(blockPosInPatchSpace.x) - m_Parent.getMeshAABB((*itBlk)->m_MeshName).getMaximum().x / mLod;
+		blockMinCornerPosInPatchSpace.y = Math::Abs(blockPosInPatchSpace.y) - m_Parent.getMeshAABB((*itBlk)->m_MeshName).getMaximum().y / mLod;
+
+		if (blockMinCornerPosInPatchSpace.x > m_Parent.getClipmapSize() / 2.0 ||
+		blockMinCornerPosInPatchSpace.y > m_Parent.getClipmapSize() / 2.0)
+		continue;
+
+		// frustum culling
+		// this implementation is wrong...
+		/*Matrix4 mat;
+		(*itBlk)->getWorldTransforms(&mat);
+
+		AxisAlignedBox aabb;
+		aabb = m_Parent.getMeshAABB((*itBlk)->m_MeshName);
+		aabb.transform(mat);
+
+		if (!m_Parent.getCamera()->isVisible(aabb))
+		continue;*/
+
+		queue->addRenderable(*itBlk);
 	}
 }
 

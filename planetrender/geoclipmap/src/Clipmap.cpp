@@ -102,8 +102,6 @@ void Clipmap::updateVisibleArea(unsigned int level, Vector2 centralUV)
 		src_y0 = 0;
 	}
 
-	
-
 	if (src_x1 > texSize) {
 		dest_x1 -= src_x1 - texSize;
 		src_x1 = texSize;

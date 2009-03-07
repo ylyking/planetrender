@@ -17,17 +17,20 @@ namespace Ogre
 		Matrix4 m_Tx;
 		Matrix4 m_PatchTx;
 	public:
-		GeoClipmapBlock(const GeoClipmapPatch& patch, const MovableObject& movObj);
-		virtual ~GeoClipmapBlock(void);
-		//// Variables
 		String m_MeshName;
 		MaterialPtr m_Mat; 
 		int m_LodLvl;
 		Vector2 m_Pos;
 		Vector3 m_BlockPosInCubeSpace;
+
+		//// Getters/setters
+		GeoClipmapBlock(const GeoClipmapPatch& patch, const MovableObject& movObj);
+		virtual ~GeoClipmapBlock(void);
+
 		//// Methods
 		void computeTransform();
-		// override
+
+		//// Override
 		virtual const MaterialPtr& getMaterial(void) const;
 		virtual void getRenderOperation(RenderOperation &op);
 		virtual void getWorldTransforms(Matrix4* xform) const;

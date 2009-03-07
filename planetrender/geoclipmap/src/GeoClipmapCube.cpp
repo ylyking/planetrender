@@ -10,14 +10,14 @@
 using namespace Ogre;
 
 GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, unsigned int detailGridSize) :
-	m_SceneMgr(sceneMgr),
-	m_Camera(camera),
-	m_Radius(radius),
-	m_MaxHeight(maxHeight + radius),
-	m_SemiEdgeLen(radius * Math::Cos(Degree(45))),
-	m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
+m_SceneMgr(sceneMgr),
+m_Camera(camera),
+m_Radius(radius),
+m_MaxHeight(maxHeight + radius),
+m_SemiEdgeLen(radius * Math::Cos(Degree(45))),
+m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
 {
-//	m_ClipmapSize = cm->getLayerSize(0) - 1;//1 * (m_N - 1) ; // 64;//this is wrong, just a replacement value for debug
+	//	m_ClipmapSize = cm->getLayerSize(0) - 1;//1 * (m_N - 1) ; // 64;//this is wrong, just a replacement value for debug
 	m_ClipmapSize = 129 - 1;
 	assert(m_ClipmapSize % 2 == 0);
 	m_N = detailGridSize;
@@ -27,7 +27,7 @@ GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, SceneManager* scen
 	// create the patches
 	memset(m_Patches, 0, sizeof(GeoClipmapPatch*)  * 6);
 	for(int i = 0; i < 6; i++) {
-		m_Clipmaps[i] = new Clipmap(4, m_ClipmapSize + 1, detailGridSize);
+		m_Clipmaps[i] = new Clipmap(5, m_ClipmapSize + 1, detailGridSize);
 		for(int lod = 0; lod < 5; lod++) {
 			m_Clipmaps[i]->addTexture("marsheightm" + StringConverter::toString(i) + "_" + StringConverter::toString(lod) + ".bmp");
 		}
@@ -66,7 +66,7 @@ Real GeoClipmapCube::getBoundingRadius(void) const
 void GeoClipmapCube::_updateRenderQueue(RenderQueue* queue)
 {
 	computePatchViewpoints();
-	
+
 	for(int i = 0; i < 6; i++)
 		if (m_FaceVisible[i])
 			m_Patches[i]->_updateRenderQueue(queue);
@@ -106,10 +106,10 @@ void GeoClipmapCube::computeFaceTxMat(Node* parent)
 
 	// finally, update the clip planes, since it is in world space...
 	/*Plane clipPlanes[4] = { // old code for rect plane
-		Plane( 1, 0, 0, m_ClipmapSize / 2.0),
-		Plane(-1, 0, 0, m_ClipmapSize / 2.0),
-		Plane( 0, 1, 0, m_ClipmapSize / 2.0),
-		Plane( 0,-1, 0, m_ClipmapSize / 2.0),
+	Plane( 1, 0, 0, m_ClipmapSize / 2.0),
+	Plane(-1, 0, 0, m_ClipmapSize / 2.0),
+	Plane( 0, 1, 0, m_ClipmapSize / 2.0),
+	Plane( 0,-1, 0, m_ClipmapSize / 2.0),
 	};*/
 
 	float cp_nelm = Math::InvSqrt(2);
@@ -152,6 +152,7 @@ void GeoClipmapCube::createGrids()
 {
 	int m = (m_N + 1) / 4;
 	int l = 2 * (m - 1) + 3;
+	//createGrid(GCM_MESH_BASE, m_ClipmapSize+1, m_ClipmapSize+1);
 	createGrid(GCM_MESH_MXM, m, m);
 	createGrid(GCM_MESH_MX3, m, 3);
 	createGrid(GCM_MESH_3XM, 3, m);
@@ -183,8 +184,8 @@ void GeoClipmapCube::createGrid(MeshType meshType, int vertexCountX, int vertexC
 
 	// gen vertex
 	Vector3 vStart(-BlkMeshWidth / 2.0, BlkMeshHeight / 2.0, 0);
-	m_MeshAABBs[meshType].setMinimum(-BlkMeshWidth / 2.0, -BlkMeshHeight / 2.0, -m_MaxHeight);
-	m_MeshAABBs[meshType].setMaximum(BlkMeshWidth / 2.0, BlkMeshHeight / 2.0, m_MaxHeight);
+	m_MeshAABBs[getMeshName(meshType)].setMinimum(-BlkMeshWidth / 2.0, -BlkMeshHeight / 2.0, -m_MaxHeight);
+	m_MeshAABBs[getMeshName(meshType)].setMaximum(BlkMeshWidth / 2.0, BlkMeshHeight / 2.0, m_MaxHeight);
 
 	Vector3 vDeltaX((Real)BlkMeshWidth / SegX, 0, 0);
 	Vector3 vDeltaY(0, -(Real)BlkMeshHeight / SegY, 0);
@@ -246,11 +247,11 @@ void GeoClipmapCube::createTFillingGrid(MeshType meshType, int coarserVertexCoun
 	// Set aabb
 	Real eps = 1;
 	if (transpose) {
-		m_MeshAABBs[meshType].setMinimum(-eps, -BlkMeshWidth / 2.0, -m_MaxHeight);
-		m_MeshAABBs[meshType].setMaximum(eps, BlkMeshWidth / 2.0, m_MaxHeight);
+		m_MeshAABBs[getMeshName(meshType)].setMinimum(-eps, -BlkMeshWidth / 2.0, -m_MaxHeight);
+		m_MeshAABBs[getMeshName(meshType)].setMaximum(eps, BlkMeshWidth / 2.0, m_MaxHeight);
 	} else {
-		m_MeshAABBs[meshType].setMinimum(-BlkMeshWidth / 2.0, -eps, -m_MaxHeight);
-		m_MeshAABBs[meshType].setMaximum(BlkMeshWidth / 2.0, eps, m_MaxHeight);
+		m_MeshAABBs[getMeshName(meshType)].setMinimum(-BlkMeshWidth / 2.0, -eps, -m_MaxHeight);
+		m_MeshAABBs[getMeshName(meshType)].setMaximum(BlkMeshWidth / 2.0, eps, m_MaxHeight);
 	}
 
 	// gen vertex
@@ -311,14 +312,25 @@ const String& GeoClipmapCube::getMeshName(MeshType meshType) const
 	static const String mesh3xMSuffix = "3xM";
 	static const String mesh2xLSuffix = "2xL";
 	static const String meshLx2Suffix = "Lx2";
-	static String names[] = {
+	static const String meshTFillHSuffix = "TFillH";
+	static const String meshTFillVSuffix = "TFillV";
+	static const String meshBaseSuffix = "Base";
+	static String names[GCM_MESH_COUNT] = {
 		m_ResNamePrefix + meshMxMSuffix,
 		m_ResNamePrefix + meshMx3Suffix,
 		m_ResNamePrefix + mesh3xMSuffix,
 		m_ResNamePrefix + mesh2xLSuffix,
 		m_ResNamePrefix + meshLx2Suffix,
+		m_ResNamePrefix + meshTFillHSuffix,
+		m_ResNamePrefix + meshTFillVSuffix,
+		//m_ResNamePrefix + meshBaseSuffix
 	};
 	return names[meshType];
+}
+
+const AxisAlignedBox& GeoClipmapCube::getMeshAABB(String meshName) const
+{
+	return m_MeshAABBs.find(meshName)->second;
 }
 
 void GeoClipmapCube::removeBlockMeshes() const
@@ -711,6 +723,5 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 
 unsigned int Ogre::GeoClipmapCube::getClipmapDepth() const
 {
-	//return 1;
 	return m_Clipmaps[0]->getDepth(); 
 }

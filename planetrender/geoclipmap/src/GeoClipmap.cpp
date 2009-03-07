@@ -41,11 +41,11 @@ void GeoClipmapApp::createScene(void)
 	cm->addTexture("clipmap_513x513.bmp");
 	cm->addTexture("clipmap_1025x1025.bmp");*/
 
-	GeoClipmapCube* gcmcube = new GeoClipmapCube(100, 0, mSceneMgr, mCamera, 63);
+	GeoClipmapCube* gcmcube = new GeoClipmapCube(100, 0, mSceneMgr, mCamera, 127);
 	SceneNode* cubeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("CubeNode", Vector3(-10, 0, 0));
 	cubeNode->attachObject(gcmcube);
 
-	Entity* ogreHead = mSceneMgr->createEntity("Head", gcmcube->getMeshName(GeoClipmapCube::GCM_MESH_2XL));
+	//Entity* ogreHead = mSceneMgr->createEntity("Head", gcmcube->getMeshName(GeoClipmapCube::GCM_MESH_2XL));
 
 	//SceneNode* headNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("HeadNode", Vector3(50, 0, 0));
 	//headNode->attachObject(ogreHead);

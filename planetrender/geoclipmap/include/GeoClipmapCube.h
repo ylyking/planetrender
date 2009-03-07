@@ -14,8 +14,8 @@ namespace Ogre
 
 	class GeoClipmapCube : public MovableObject
 	{
-	public:
 		//// Types
+	public:
 		enum MeshType {GCM_MESH_MXM = 0,
 			GCM_MESH_MX3,
 			GCM_MESH_3XM,
@@ -25,8 +25,8 @@ namespace Ogre
 			GCM_MESH_TFillV,
 			GCM_MESH_COUNT
 		};
-	private:
 		//// Varibles
+	private:
 		SceneManager* m_SceneMgr;
 		Camera* m_Camera;
 		// Bounding info
@@ -38,10 +38,12 @@ namespace Ogre
 		// Faces
 		GeoClipmapPatch* m_Patches[6];
 		bool m_FaceVisible[6];
-		// AxisAlignedBox of Meshes
-		std::map<MeshType, AxisAlignedBox> m_MeshAABBs;
-		Ogre::String m_ResNamePrefix;
 		Clipmap* m_Clipmaps[6];
+		// Meshes info
+		std::map<Ogre::String, AxisAlignedBox> m_MeshAABBs;
+		// Naming prefix for all kind of resources related to this cube
+		Ogre::String m_ResNamePrefix;
+
 		//// Methods
 		void createGrids();
 		void createGrid(MeshType meshType, int vertexCountX, int vertexCountY);
@@ -50,15 +52,18 @@ namespace Ogre
 		void computeFaceTxMat(Node* parent);
 		void computePatchViewpoints();
 	public:
+
 		//// Con/Destrs
 		GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, unsigned int detailGridSize);
 		virtual ~GeoClipmapCube(void);
+
 		//// Getters/setters
 		inline float getRadius() const { return m_Radius; }		
 		inline int getN() const { return m_N; }
 		int getClipmapSize() const { return m_ClipmapSize; }
 		Clipmap* getClipmap(unsigned int faceID) const { return m_Clipmaps[faceID]; }
 		Camera* getCamera() const { return m_Camera; }
+
 		//// Override
 		virtual const String& getMovableType(void) const;
 		virtual const AxisAlignedBox& getBoundingBox(void) const;
@@ -69,9 +74,11 @@ namespace Ogre
 		virtual void visitRenderables(Renderable::Visitor* visitor, 
 			bool debugRenderables = false) {
 		}
+
 		//// Methods
 		void getFaceTransformMatrix(int faceID, Matrix4* mat) const;
 		unsigned int getClipmapDepth() const;
 		const Ogre::String& getMeshName(MeshType meshType) const;
+		const AxisAlignedBox& GeoClipmapCube::getMeshAABB(String meshName) const;
 	};
 }
