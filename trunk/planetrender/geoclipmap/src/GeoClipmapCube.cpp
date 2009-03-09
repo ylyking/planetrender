@@ -15,7 +15,8 @@ m_Camera(camera),
 m_Radius(radius),
 m_MaxHeight(maxHeight + radius),
 m_SemiEdgeLen(radius * Math::Cos(Degree(45))),
-m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
+//m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
+m_AABB(Vector3(-(radius + maxHeight)), Vector3(radius + maxHeight))
 {
 	//	m_ClipmapSize = cm->getLayerSize(0) - 1;//1 * (m_N - 1) ; // 64;//this is wrong, just a replacement value for debug
 	m_ClipmapSize = 129 - 1;
@@ -472,8 +473,8 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 	for (int lodLvl = 0; lodLvl < maxLodLvl; lodLvl++)
 	{
 		if (lodLvl == 0) {
-			viewPosLists[activeFaceID][lodLvl].x = roundup(camPosOfFaces[activeFaceID].x * Math::Pow(2, lodLvl)) / Math::Pow(2, lodLvl);
-			viewPosLists[activeFaceID][lodLvl].y = roundup(camPosOfFaces[activeFaceID].y * Math::Pow(2, lodLvl)) / Math::Pow(2, lodLvl);
+			viewPosLists[activeFaceID][lodLvl].x = roundup(camPosOfFaces[activeFaceID].x * (1 << lodLvl) ) / (1 << lodLvl);
+			viewPosLists[activeFaceID][lodLvl].y = roundup(camPosOfFaces[activeFaceID].y * (1 << lodLvl) ) / (1 << lodLvl);
 		} else {
 			Vector2 offsetSign = camPosOfFaces[activeFaceID] - viewPosLists[activeFaceID][lodLvl - 1];
 			offsetSign.x = sign(offsetSign.x);
@@ -515,17 +516,16 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 				maxLodLvlAdjacent[adjacentFaceTable[activeFaceID][2]] = lodLvl;
 			if (yn <= eps)
 				maxLodLvlAdjacent[adjacentFaceTable[activeFaceID][3]] = lodLvl;
-
-			const std::vector<Vector2>& oldViewPosList = m_Patches[activeFaceID]->getViewPosList();
-			if (oldViewPosList.size() <= lodLvl) {
-				updated = true;
-				continue;
-			}
-
-			Vector2 oldViewPos = oldViewPosList[lodLvl];
-			if ((oldViewPos - viewPosLists[activeFaceID][lodLvl]).length() > 1)
-				updated = true;
 		}
+		const std::vector<Vector2>& oldViewPosList = m_Patches[activeFaceID]->getViewPosList();
+		if (oldViewPosList.size() <= lodLvl) {
+			updated = true;
+			continue;
+		}
+
+		Vector2 oldViewPos = oldViewPosList[lodLvl];
+		if ((oldViewPos - viewPosLists[activeFaceID][lodLvl]).length() > 1)
+			updated = true;
 	}
 
 	// update is not needed, return

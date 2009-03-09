@@ -114,7 +114,7 @@ void GeoClipmapBlock::_updateCustomGpuParameter(const GpuProgramParameters::Auto
 		if (m_BasePatch)
 			params->_writeRawConstant(constantEntry.physicalIndex, Vector4(m_parentPatch.getViewPosList().size() - 1, m_parentPatch.getViewPosList()[0].x, m_parentPatch.getViewPosList()[0].y, reinterpret_cast<const GeoClipmapCube&>(m_parentMovObj).getN() / 2 / 2));
 		else
-			params->_writeRawConstant(constantEntry.physicalIndex, Vector4(-1, 0, 0, 0));
+			params->_writeRawConstant(constantEntry.physicalIndex, Vector4(0, 0, 0, 0));
 		break;
 	default:
 		Renderable::_updateCustomGpuParameter(constantEntry, params);
