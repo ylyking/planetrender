@@ -48,6 +48,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_Pos = getBlockPos(i);
 		(*itBlk)->m_LodLvl = lodLvl;
 		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+		(*itBlk)->m_BasePatch = false;
 		itBlk = nextBlock(itBlk);
 	}
 
@@ -62,6 +63,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_Pos = Vector2(-(2 * ml + 1), 0);
 		(*itBlk)->m_LodLvl = lodLvl;
 		(*itBlk)->m_Mat = m_TFillMatList[lodLvl];
+		(*itBlk)->m_BasePatch = false;
 		itBlk = nextBlock(itBlk);
 
 		itBlk = getBlock(itBlk);
@@ -69,6 +71,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_Pos = Vector2(2 * ml + 1, 0);
 		(*itBlk)->m_LodLvl = lodLvl;
 		(*itBlk)->m_Mat = m_TFillMatList[lodLvl];
+		(*itBlk)->m_BasePatch = false;
 		itBlk = nextBlock(itBlk);
 
 		itBlk = getBlock(itBlk);
@@ -76,6 +79,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_Pos = Vector2(0, -(2 * ml + 1));
 		(*itBlk)->m_LodLvl = lodLvl;
 		(*itBlk)->m_Mat = m_TFillMatList[lodLvl];
+		(*itBlk)->m_BasePatch = false;
 		itBlk = nextBlock(itBlk);
 
 		itBlk = getBlock(itBlk);
@@ -83,10 +87,12 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_Pos = Vector2(0, 2 * ml + 1);
 		(*itBlk)->m_LodLvl = lodLvl;
 		(*itBlk)->m_Mat = m_TFillMatList[lodLvl];
+		(*itBlk)->m_BasePatch = false;
 		itBlk = nextBlock(itBlk);
 	}
 
 	if (lodLvl > 0) return itBlk;
+	return itBlk;
 
 	int cl = m_Parent.getClipmapSize();
 	
@@ -98,7 +104,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 	//int k = Math::Ceil(m_Parent.getClipmapSize() / (m-1));
 	//k = 2;
 	int k = Math::Ceil((cl / 2.0 + maxCoord - half_nl) / ml);
-	//return itBlk;
+	
 	for(int i = 0; i < k; i++) {
 		// fill outwards
 		float initPos = -half_nl - 0.5 * ml - i * ml;
@@ -112,6 +118,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_Pos = Vector2(0, initPos);
 		(*itBlk)->m_LodLvl = lodLvl;
 		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+		(*itBlk)->m_BasePatch = false;
 		itBlk = nextBlock(itBlk);
 
 		itBlk = getBlock(itBlk);
@@ -119,6 +126,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_Pos = Vector2(0, -initPos);
 		(*itBlk)->m_LodLvl = lodLvl;
 		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+		(*itBlk)->m_BasePatch = false;
 		itBlk = nextBlock(itBlk);
 
 		// Mx3
@@ -127,6 +135,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_Pos = Vector2(initPos, 0);
 		(*itBlk)->m_LodLvl = lodLvl;
 		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+		(*itBlk)->m_BasePatch = false;
 		itBlk = nextBlock(itBlk);
 
 		itBlk = getBlock(itBlk);
@@ -134,6 +143,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		(*itBlk)->m_Pos = Vector2(-initPos, 0);
 		(*itBlk)->m_LodLvl = lodLvl;
 		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+		(*itBlk)->m_BasePatch = false;
 		itBlk = nextBlock(itBlk);
 
 		for(int j = 0; j < 2 + k; j++) {
@@ -143,6 +153,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 			(*itBlk)->m_Pos = Vector2(x, y);
 			(*itBlk)->m_LodLvl = lodLvl;
 			(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+			(*itBlk)->m_BasePatch = false;
 			itBlk = nextBlock(itBlk);
 
 			itBlk = getBlock(itBlk);
@@ -150,6 +161,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 			(*itBlk)->m_Pos = Vector2(-x, y);
 			(*itBlk)->m_LodLvl = lodLvl;
 			(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+			(*itBlk)->m_BasePatch = false;
 			itBlk = nextBlock(itBlk);
 
 			itBlk = getBlock(itBlk);
@@ -157,6 +169,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 			(*itBlk)->m_Pos = Vector2(-x, -y);
 			(*itBlk)->m_LodLvl = lodLvl;
 			(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+			(*itBlk)->m_BasePatch = false;
 			itBlk = nextBlock(itBlk);
 
 			itBlk = getBlock(itBlk);
@@ -164,6 +177,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 			(*itBlk)->m_Pos = Vector2(x, -y);
 			(*itBlk)->m_LodLvl = lodLvl;
 			(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+			(*itBlk)->m_BasePatch = false;
 			itBlk = nextBlock(itBlk);
 
 			if (j > 0) {
@@ -172,6 +186,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 				(*itBlk)->m_Pos = Vector2(y, x);
 				(*itBlk)->m_LodLvl = lodLvl;
 				(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+				(*itBlk)->m_BasePatch = false;
 				itBlk = nextBlock(itBlk);
 
 				itBlk = getBlock(itBlk);
@@ -179,6 +194,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 				(*itBlk)->m_Pos = Vector2(-y, x);
 				(*itBlk)->m_LodLvl = lodLvl;
 				(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+				(*itBlk)->m_BasePatch = false;
 				itBlk = nextBlock(itBlk);
 
 				itBlk = getBlock(itBlk);
@@ -186,6 +202,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 				(*itBlk)->m_Pos = Vector2(-y, -x);
 				(*itBlk)->m_LodLvl = lodLvl;
 				(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+				(*itBlk)->m_BasePatch = false;
 				itBlk = nextBlock(itBlk);
 
 				itBlk = getBlock(itBlk);
@@ -193,6 +210,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 				(*itBlk)->m_Pos = Vector2(y, -x);
 				(*itBlk)->m_LodLvl = lodLvl;
 				(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+				(*itBlk)->m_BasePatch = false;
 				itBlk = nextBlock(itBlk);
 			}
 			x += ml;
@@ -216,6 +234,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeL(int lodLvl, const B
 	(*itBlk)->m_Pos = Vector2(Math::Sign(m_ViewPosList[lodLvl].x - m_ViewPosList[lodLvl + 1].x) * pos, 0);
 	(*itBlk)->m_LodLvl = lodLvl;
 	(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+	(*itBlk)->m_BasePatch = false;
 	itBlk = nextBlock(itBlk);
 
 	itBlk = getBlock(itBlk);
@@ -223,6 +242,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeL(int lodLvl, const B
 	(*itBlk)->m_Pos = Vector2(0, Math::Sign(m_ViewPosList[lodLvl].y - m_ViewPosList[lodLvl + 1].y) * pos);
 	(*itBlk)->m_LodLvl = lodLvl;
 	(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+	(*itBlk)->m_BasePatch = false;
 	itBlk = nextBlock(itBlk);
 
 	return itBlk; // return the ptr to next free block
@@ -248,6 +268,7 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeFinest(int lodLvl, co
 		(*itBlk)->m_Pos = getBlockPos(i);
 		(*itBlk)->m_LodLvl = lodLvl;
 		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
+		(*itBlk)->m_BasePatch = false;
 		itBlk = nextBlock(itBlk);
 	}
 
@@ -279,7 +300,7 @@ void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 	if (m_ViewPosListUpdated) {
 		m_PatchTxMatList.resize(m_ViewPosList.size());
 
-		for(int lodLvl = 0; lodLvl < (int)m_PatchTxMatList.size(); lodLvl++) {
+		for(int lodLvl = 1; lodLvl < (int)m_PatchTxMatList.size(); lodLvl++) {
 			// room for optimization, store the matRing
 			// translate the ring and scale them
 			Matrix4 matRing;
@@ -300,20 +321,32 @@ void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 		}
 
 		BlockList::iterator itBlk =  m_BlockList.begin();
-		for(int i = 0; i < (int)m_ViewPosList.size(); i++) {
-			itBlk = placeRing(i, itBlk);
-			if (i < (int)m_ViewPosList.size() - 1)
-				itBlk = placeL(i, itBlk);
+		for(int lodLvl = 1; lodLvl < (int)m_ViewPosList.size(); lodLvl++) {
+			itBlk = placeRing(lodLvl, itBlk);
+			if (lodLvl < (int)m_ViewPosList.size() - 1)
+				itBlk = placeL(lodLvl, itBlk);
 			else
-				itBlk = placeFinest(i, itBlk);
+				itBlk = placeFinest(lodLvl, itBlk);
 		}
 		// clear unused
 		m_BlockList.erase(itBlk, m_BlockList.end());
+
+		if (m_BaseBlock.get() == NULL) {
+			m_BaseBlock.reset(new GeoClipmapBlock(*this, m_Parent));
+			m_BaseBlock->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_BASE);
+			m_BaseBlock->m_Pos = Vector2(0, 0);
+			m_BaseBlock->m_LodLvl = 0;
+			m_BaseBlock->m_Mat = m_NormalMatList[0];
+			m_BaseBlock->m_BasePatch = true;
+			m_BaseBlock->computeTransform();
+		}
 
 		m_ViewPosListUpdated = false;
 	}
 	
 	Vector3 vCamInCubeSpace = m_Parent.getCamera()->getPosition() - m_Parent.getParentNode()->getPosition();
+
+	queue->addRenderable(m_BaseBlock.get());
 
 	for(BlockList::iterator itBlk = m_BlockList.begin(); itBlk != m_BlockList.end(); itBlk++) {
 		// normal direction culling

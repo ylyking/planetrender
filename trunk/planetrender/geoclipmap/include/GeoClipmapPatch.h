@@ -23,6 +23,7 @@ namespace Ogre
 		// Block pools
 		typedef std::list<GeoClipmapBlock*> BlockList;
 		BlockList m_BlockList;
+		std::auto_ptr<GeoClipmapBlock> m_BaseBlock; // the coarest geoclipmap block
 		// Clip plane coeff.
 		Plane m_ClipPlanes[4];
 
@@ -50,6 +51,7 @@ namespace Ogre
 			assert(clipPlaneID >= 0 && clipPlaneID < 4);
 			m_ClipPlanes[clipPlaneID] = val;
 		}
+		int getFaceID() const { return m_FaceID; }
 
 		//// Methods
 		void _updateRenderQueue(RenderQueue* queue);

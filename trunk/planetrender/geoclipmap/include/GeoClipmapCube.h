@@ -23,6 +23,7 @@ namespace Ogre
 			GCM_MESH_LX2,
 			GCM_MESH_TFillH,
 			GCM_MESH_TFillV,
+			GCM_MESH_BASE,
 			GCM_MESH_COUNT
 		};
 		//// Varibles

@@ -152,7 +152,7 @@ void GeoClipmapCube::createGrids()
 {
 	int m = (m_N + 1) / 4;
 	int l = 2 * (m - 1) + 3;
-	//createGrid(GCM_MESH_BASE, m_ClipmapSize+1, m_ClipmapSize+1);
+	createGrid(GCM_MESH_BASE, m_ClipmapSize+1, m_ClipmapSize+1);
 	createGrid(GCM_MESH_MXM, m, m);
 	createGrid(GCM_MESH_MX3, m, 3);
 	createGrid(GCM_MESH_3XM, 3, m);
@@ -323,7 +323,7 @@ const String& GeoClipmapCube::getMeshName(MeshType meshType) const
 		m_ResNamePrefix + meshLx2Suffix,
 		m_ResNamePrefix + meshTFillHSuffix,
 		m_ResNamePrefix + meshTFillVSuffix,
-		//m_ResNamePrefix + meshBaseSuffix
+		m_ResNamePrefix + meshBaseSuffix
 	};
 	return names[meshType];
 }
