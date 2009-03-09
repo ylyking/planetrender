@@ -22,6 +22,7 @@ namespace Ogre
 		int m_LodLvl;
 		Vector2 m_Pos;
 		Vector3 m_BlockPosInCubeSpace;
+		bool m_BasePatch;
 
 		//// Getters/setters
 		GeoClipmapBlock(const GeoClipmapPatch& patch, const MovableObject& movObj);
