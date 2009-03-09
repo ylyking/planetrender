@@ -91,132 +91,6 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeRing(int lodLvl, cons
 		itBlk = nextBlock(itBlk);
 	}
 
-	if (lodLvl > 0) return itBlk;
-	return itBlk;
-
-	int cl = m_Parent.getClipmapSize();
-	
-	float maxCoord = std::max(Math::Abs(m_ViewPosList[0].x), Math::Abs(m_ViewPosList[0].y));
-	float half_nl = (m_Parent.getN() - 1) / 2.0;
-
-	// if lodlvl = 0. fill the whole clipmap space
-	// there are k rings, this should be optimize later
-	//int k = Math::Ceil(m_Parent.getClipmapSize() / (m-1));
-	//k = 2;
-	int k = Math::Ceil((cl / 2.0 + maxCoord - half_nl) / ml);
-	
-	for(int i = 0; i < k; i++) {
-		// fill outwards
-		float initPos = -half_nl - 0.5 * ml - i * ml;
-		// fill by mirroring
-		float x = initPos;
-		float y = initPos;
-
-		// 3xM
-		itBlk = getBlock(itBlk);
-		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_3XM);
-		(*itBlk)->m_Pos = Vector2(0, initPos);
-		(*itBlk)->m_LodLvl = lodLvl;
-		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
-		(*itBlk)->m_BasePatch = false;
-		itBlk = nextBlock(itBlk);
-
-		itBlk = getBlock(itBlk);
-		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_3XM);
-		(*itBlk)->m_Pos = Vector2(0, -initPos);
-		(*itBlk)->m_LodLvl = lodLvl;
-		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
-		(*itBlk)->m_BasePatch = false;
-		itBlk = nextBlock(itBlk);
-
-		// Mx3
-		itBlk = getBlock(itBlk);
-		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MX3);
-		(*itBlk)->m_Pos = Vector2(initPos, 0);
-		(*itBlk)->m_LodLvl = lodLvl;
-		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
-		(*itBlk)->m_BasePatch = false;
-		itBlk = nextBlock(itBlk);
-
-		itBlk = getBlock(itBlk);
-		(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MX3);
-		(*itBlk)->m_Pos = Vector2(-initPos, 0);
-		(*itBlk)->m_LodLvl = lodLvl;
-		(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
-		(*itBlk)->m_BasePatch = false;
-		itBlk = nextBlock(itBlk);
-
-		for(int j = 0; j < 2 + k; j++) {
-			// MxM
-			itBlk = getBlock(itBlk);
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
-			(*itBlk)->m_Pos = Vector2(x, y);
-			(*itBlk)->m_LodLvl = lodLvl;
-			(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
-			(*itBlk)->m_BasePatch = false;
-			itBlk = nextBlock(itBlk);
-
-			itBlk = getBlock(itBlk);
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
-			(*itBlk)->m_Pos = Vector2(-x, y);
-			(*itBlk)->m_LodLvl = lodLvl;
-			(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
-			(*itBlk)->m_BasePatch = false;
-			itBlk = nextBlock(itBlk);
-
-			itBlk = getBlock(itBlk);
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
-			(*itBlk)->m_Pos = Vector2(-x, -y);
-			(*itBlk)->m_LodLvl = lodLvl;
-			(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
-			(*itBlk)->m_BasePatch = false;
-			itBlk = nextBlock(itBlk);
-
-			itBlk = getBlock(itBlk);
-			(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
-			(*itBlk)->m_Pos = Vector2(x, -y);
-			(*itBlk)->m_LodLvl = lodLvl;
-			(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
-			(*itBlk)->m_BasePatch = false;
-			itBlk = nextBlock(itBlk);
-
-			if (j > 0) {
-				itBlk = getBlock(itBlk);
-				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
-				(*itBlk)->m_Pos = Vector2(y, x);
-				(*itBlk)->m_LodLvl = lodLvl;
-				(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
-				(*itBlk)->m_BasePatch = false;
-				itBlk = nextBlock(itBlk);
-
-				itBlk = getBlock(itBlk);
-				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
-				(*itBlk)->m_Pos = Vector2(-y, x);
-				(*itBlk)->m_LodLvl = lodLvl;
-				(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
-				(*itBlk)->m_BasePatch = false;
-				itBlk = nextBlock(itBlk);
-
-				itBlk = getBlock(itBlk);
-				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
-				(*itBlk)->m_Pos = Vector2(-y, -x);
-				(*itBlk)->m_LodLvl = lodLvl;
-				(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
-				(*itBlk)->m_BasePatch = false;
-				itBlk = nextBlock(itBlk);
-
-				itBlk = getBlock(itBlk);
-				(*itBlk)->m_MeshName = m_Parent.getMeshName(GeoClipmapCube::GCM_MESH_MXM);
-				(*itBlk)->m_Pos = Vector2(y, -x);
-				(*itBlk)->m_LodLvl = lodLvl;
-				(*itBlk)->m_Mat = m_NormalMatList[lodLvl];
-				(*itBlk)->m_BasePatch = false;
-				itBlk = nextBlock(itBlk);
-			}
-			x += ml;
-		}
-	}
-
 	return itBlk; // return the ptr to next free block
 }
 
@@ -277,22 +151,26 @@ GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::placeFinest(int lodLvl, co
 
 GeoClipmapPatch::BlockList::iterator GeoClipmapPatch::nextBlock(BlockList::iterator usedBlockPtr)
 {
+	(*usedBlockPtr)->computeTransform();
 	// check is the block inside the face, if it is not, recycle it
-	Vector2 pos = (*usedBlockPtr)->m_Pos;
-	pos *= Math::Pow(2, -(*usedBlockPtr)->m_LodLvl);
-	pos += m_ViewPosList[(*usedBlockPtr)->m_LodLvl];
-	float maxCoord = std::max(Math::Abs(pos.x), Math::Abs(pos.y));
-	
-	int m = (m_Parent.getN() + 1) / 4;
-	float ml = m-1;
-	int cl = m_Parent.getClipmapSize();
+	Vector3 vCamInCubeSpace = m_Parent.getCamera()->getPosition() - m_Parent.getParentNode()->getPosition();
 
-	if (maxCoord > (cl / 2.0 + ml))
+	// normal direction culling
+	if ((*usedBlockPtr)->m_BlockPosInCubeSpace.dotProduct(vCamInCubeSpace) < -1e-3)
 		return usedBlockPtr;
-	else {
-		(*usedBlockPtr)->computeTransform();
-		return ++usedBlockPtr;
-	}
+
+	int mLod = 1 << ((*usedBlockPtr)->m_LodLvl);
+	// inside plane culling
+	Vector2 blockPosInPatchSpace = (*usedBlockPtr)->m_Pos / mLod + m_ViewPosList[(*usedBlockPtr)->m_LodLvl];
+	Vector2 blockMinCornerPosInPatchSpace;
+	blockMinCornerPosInPatchSpace.x = Math::Abs(blockPosInPatchSpace.x) - m_Parent.getMeshAABB((*usedBlockPtr)->m_MeshName).getMaximum().x / mLod;
+	blockMinCornerPosInPatchSpace.y = Math::Abs(blockPosInPatchSpace.y) - m_Parent.getMeshAABB((*usedBlockPtr)->m_MeshName).getMaximum().y / mLod;
+
+	if (blockMinCornerPosInPatchSpace.x > m_Parent.getClipmapSize() / 2.0 ||
+		blockMinCornerPosInPatchSpace.y > m_Parent.getClipmapSize() / 2.0)
+		return usedBlockPtr;
+
+	return ++usedBlockPtr;
 }
 
 void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
@@ -344,26 +222,9 @@ void GeoClipmapPatch::_updateRenderQueue(RenderQueue* queue)
 		m_ViewPosListUpdated = false;
 	}
 	
-	Vector3 vCamInCubeSpace = m_Parent.getCamera()->getPosition() - m_Parent.getParentNode()->getPosition();
-
 	queue->addRenderable(m_BaseBlock.get());
 
 	for(BlockList::iterator itBlk = m_BlockList.begin(); itBlk != m_BlockList.end(); itBlk++) {
-		// normal direction culling
-		if ((*itBlk)->m_BlockPosInCubeSpace.dotProduct(vCamInCubeSpace) < -1e-3)
-		continue;
-
-		int mLod = 1 << ((*itBlk)->m_LodLvl);
-		// inside plane culling
-		Vector2 blockPosInPatchSpace = (*itBlk)->m_Pos / mLod + m_ViewPosList[(*itBlk)->m_LodLvl];
-		Vector2 blockMinCornerPosInPatchSpace;
-		blockMinCornerPosInPatchSpace.x = Math::Abs(blockPosInPatchSpace.x) - m_Parent.getMeshAABB((*itBlk)->m_MeshName).getMaximum().x / mLod;
-		blockMinCornerPosInPatchSpace.y = Math::Abs(blockPosInPatchSpace.y) - m_Parent.getMeshAABB((*itBlk)->m_MeshName).getMaximum().y / mLod;
-
-		if (blockMinCornerPosInPatchSpace.x > m_Parent.getClipmapSize() / 2.0 ||
-		blockMinCornerPosInPatchSpace.y > m_Parent.getClipmapSize() / 2.0)
-		continue;
-
 		// frustum culling
 		// this implementation is wrong...
 		/*Matrix4 mat;
@@ -447,14 +308,10 @@ void GeoClipmapPatch::createMat()
 		pass->setFragmentProgram("GeoClipmapFP");
 
 		TextureUnitState* tus;
-
-		
-
 		tus = pass->createTextureUnitState(m_Parent.getClipmap(m_FaceID)->getLayerTexture(lodLvl)->getName());
 		tus->setBindingType(TextureUnitState::BT_VERTEX);
 		
 		tus = pass->createTextureUnitState("mars_h.bmp");
-		//tus->setTextureFiltering(FO_POINT, FO_POINT,FO_NONE);
 		
 		m_TFillMatList.push_back(m_NormalMatList[lodLvl]->clone
 				(patchNamePrefix + StringConverter::toString(lodLvl) + "_TFill")
