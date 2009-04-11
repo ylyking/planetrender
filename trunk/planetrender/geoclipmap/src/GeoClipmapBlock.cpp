@@ -82,6 +82,10 @@ void GeoClipmapBlock::_updateCustomGpuParameter(const GpuProgramParameters::Auto
 {
 	Matrix4 mat;
 	float vx = 0, vy = 0;
+
+	Real Kr = 0.0025;
+	Real Km = 0.0025;
+
 	switch (constantEntry.data)
 	{
 	case 1://patchTx
@@ -116,6 +120,14 @@ void GeoClipmapBlock::_updateCustomGpuParameter(const GpuProgramParameters::Auto
 		else
 			params->_writeRawConstant(constantEntry.physicalIndex, Vector4(0, 0, 0, 0));
 		break;
+	/*
+	case 7:
+			params->_writeRawConstant(constantEntry.physicalIndex, Kr);
+		break;
+	case 8:
+			params->_writeRawConstant(constantEntry.physicalIndex, Km);
+		break;
+	*/
 	default:
 		Renderable::_updateCustomGpuParameter(constantEntry, params);
 	}

@@ -20,6 +20,11 @@ LGPL like the rest of the OGRE engine.
 #ifndef __GeoClipmap_h_
 #define __GeoClipmap_h_
 
+#define CLOCKWISE 0
+#define ANTICLOCKWISE 1
+#define GEOCLIPMAP 1
+#define ATMOSPHERE 1
+#define HDR 0
 
 #include "BaseApplication.h"
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
@@ -34,7 +39,10 @@ public:
 	virtual ~GeoClipmapApp(void);
 
 protected:
+	//virtual void createCamera(void);
 	virtual void createScene(void);
+	void createOpticalDepthTexture(Real fOuterRadius, Real fInnerRadius, Real fRayleighScaleHeight, Real fMieScaleHeight, int samples, int texWidth, int texHeight, String opticalDepthTexName);
+	void createSphere(const std::string& strName, const float r, const int nRings = 16, const int nSegments = 16, int order = ANTICLOCKWISE);
 };
 
 

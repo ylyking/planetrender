@@ -6,6 +6,8 @@
 #include <list>
 #include <vector>
 
+#define ATMOSPHERE 1
+
 namespace Ogre
 {
 	class GeoClipmapCube;

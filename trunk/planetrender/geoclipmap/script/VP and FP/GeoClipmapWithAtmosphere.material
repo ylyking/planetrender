@@ -1,0 +1,45 @@
+vertex_program GeoClipmapWithAtmosphereVP cg
+{
+	source GeoClipmapWithAtmosphere.cg
+	entry_point main_vp
+	profiles vs_3_0 vp40
+	default_params
+	{
+		param_named_auto patchTx  custom 1
+		param_named_auto cubeTx   custom 2
+		param_named_auto radius   custom 3
+		param_named_auto nl		  custom 4
+		param_named_auto blockPos custom 5
+		param_named_auto viewProj viewproj_matrix		
+		//param_named_auto lightDirection light_position_object_space 0
+		//param_named_auto cameraPosition camera_position_object_space
+		param_named_auto lightDirection light_position 0
+		param_named_auto cameraPosition camera_position
+		param_named fOuterRadius float 120.0
+		param_named fInnerRadius float 100.0
+		param_named Kr float 0.0025
+		param_named Km float 0.0025		
+		param_named PI float 3.14159
+		//param_named g float -0.75
+		param_named ESun float 15.0
+		param_named fSamples float 15.0
+		param_named fWavelength float3 0.65 0.57 0.475
+		param_named DELTA float 1e-6
+		//param_named fTexWidth float 128.0
+		//param_named fTexHeight float 128.0
+	}
+}
+
+fragment_program GeoClipmapWithAtmosphereFP cg
+{
+	source GeoClipmapWithAtmosphere.cg
+	entry_point main_fp
+	profiles ps_3_0 fp40
+	default_params
+	{						
+		param_named_auto clipCenter custom 6
+		//param_named_auto lightDirection light_position_object_space 0
+		param_named_auto lightDirection light_position 0
+		param_named g float -0.75
+	}
+}

@@ -5,9 +5,9 @@ vertex_program GeoClipmapVP cg
 	profiles vs_3_0 vp40
 	default_params
 	{
-		param_named_auto patchTx  custom 1
-		param_named_auto cubeTx   custom 2
-		param_named_auto radius   custom 3
+		param_named_auto patchTx custom 1
+		param_named_auto cubeTx  custom 2
+		param_named_auto radius  custom 3
 		param_named_auto nl		  custom 4
 		param_named_auto blockPos custom 5
 		param_named_auto viewProj viewproj_matrix
@@ -19,8 +19,4 @@ fragment_program GeoClipmapFP cg
 	source GeoClipmap.cg
 	entry_point main_fp
 	profiles ps_3_0 fp40
-	default_params
-	{
-		param_named_auto clipCenter custom 6
-	}
 }

@@ -301,17 +301,28 @@ void GeoClipmapPatch::createMat()
 	{
 		m_NormalMatList.push_back(MaterialManager::getSingleton().create(
 			patchNamePrefix + StringConverter::toString(lodLvl) + "_Normal",
-			ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME));
-
+			ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME));			
+	
 		Pass* pass = m_NormalMatList[lodLvl]->getTechnique(0)->getPass(0);
+#if ATMOSPHERE == 1
+		pass->setVertexProgram("GeoClipmapWithAtmosphereVP");
+		pass->setFragmentProgram("GeoClipmapWithAtmosphereFP");
+#else
 		pass->setVertexProgram("GeoClipmapVP");
 		pass->setFragmentProgram("GeoClipmapFP");
+#endif
 
 		TextureUnitState* tus;
+
 		tus = pass->createTextureUnitState(m_Parent.getClipmap(m_FaceID)->getLayerTexture(lodLvl)->getName());
+		tus->setBindingType(TextureUnitState::BT_VERTEX);	
+
+#if ATMOSPHERE == 1
+		tus = pass->createTextureUnitState(m_Parent.getOpticalDepthTexName());
 		tus->setBindingType(TextureUnitState::BT_VERTEX);
-		
+#else				
 		tus = pass->createTextureUnitState("mars_h.bmp");
+#endif
 		
 		m_TFillMatList.push_back(m_NormalMatList[lodLvl]->clone
 				(patchNamePrefix + StringConverter::toString(lodLvl) + "_TFill")
