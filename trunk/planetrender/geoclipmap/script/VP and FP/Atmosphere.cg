@@ -1,16 +1,21 @@
+struct vp_input {
+	float4 position : POSITION;
+	float4 normal : NORMAL;
+};
 
-//#define interpolation 1
+struct vp_output {	
+	float4 position : POSITION;
+	float4 color : COLOR;
+};
 
-float4 interpolate
-(
+float4 interpolate(
 float4 xFloorYFloor, 
 float4 xCeilYFloor,
 float4 xFloorYCeil,
 float4 xCeilYCeil,
 float xRatio,
 float yRatio
-) 
-{		
+) {		
 	return xFloorYFloor * (1 - xRatio) * (1 - yRatio) + 
 		   xCeilYFloor * xRatio * (1 - yRatio) + 
 		   xFloorYCeil * (1 - xRatio) * yRatio + 
@@ -19,110 +24,54 @@ float yRatio
 
 void main_vp
 (
-	//input
-    float4 position			 : POSITION,
-	//output
-    out float4 oPosition	 : POSITION,	
-    out float4 oColor0		 : COLOR0,
-	out float4 oColor1		 : COLOR1,	
-    out float  oUV			 : TEXCOORD0,
-    out float2 oPosPatch	 : TEXCOORD1,
-	out float3 oVRay		 : TEXCOORD2,
-	//AtmosphericScattering parameters
-	uniform sampler OpticalDepth : TEXUNIT1,
-	uniform float3 lightDirection,
-	uniform float3 cameraPosition,
-	uniform float fOuterRadius,
-	uniform float fInnerRadius,	
-	uniform float Kr,
-	uniform float Km,
-	uniform float PI,
-	//uniform float g,
-	uniform float ESun,
-	uniform float fSamples,
-	uniform float3 fWavelength,
-	uniform float DELTA,
-#ifdef interpolation	
-	uniform float fTexWidth,
-	uniform float fTexHeight,
-#endif	
-	//GeoClipmap parameters
-    uniform float4x4 patchTx,
-    uniform float4x4 cubeTx,
-    uniform float	 radius,
-    uniform float	 nl, // it is nl for lod != 0, clipmap size fot lod == 0
-	uniform float4	 blockPos, // yz is 0 for lod != 0, viewpos for lod == 0
-    uniform float4x4 viewProj,
-    uniform sampler2D heightmap : register(s0)
-)
-{
-	// in block pos
-	oPosition = position;
-	oPosition.xy += blockPos.xy;
+uniform sampler OpticalDepth : TEXUNIT0,
+uniform float3 lightDirection,
+uniform float3 cameraPosition,
+uniform float4x4 worldViewProj,
+uniform float fOuterRadius,
+uniform float fInnerRadius,
+uniform float Kr,
+uniform float Km,
+uniform float PI,
+//uniform float g,
+uniform float ESun,
+uniform float fSamples,
+uniform float3 fWavelength,
+uniform float DELTA,
+//uniform float fTexWidth,
+//uniform float fTexHeight,
+float4 position : POSITION,
+out float4 oPosition : POSITION,
+out float3 oVRay : TEXCOORD0,
+out float4 oColor0 : COLOR0,
+out float4 oColor1 : COLOR1
+) 
+{	
+	vp_output OUT;
 	
-	// calculate uv
-	float2 uv = oPosition.xy;
-	oPosPatch = oPosition.xy;
+	oPosition = mul(worldViewProj, position);	
 	
-	// fix the uv at lod = 0
-	uv += blockPos.zw;
-	
-	// scale the uv
-	uv *= 2 / nl;
-		
-	// calc alpha
-	float steepness = 5;
-	float alpha = pow(max(abs(uv.x), abs(uv.y)), steepness);
-	
-	uv = (uv / 2 + float2(0.5, 0.5));
-	uv.y = -uv.y;
-	
-	//if (alpha > 0.9)
-	//	alpha = 1;
-	
-	// fetch height
-	float h = lerp(tex2D(heightmap, uv).r, tex2D(heightmap, uv).g, alpha);
-	
-	oUV = h;
-	//oPosition.z = h * 10;
-	
-	// calc debug color
-	//oColor = float4(h, h, h, 1);
-
-	// in patch space
-	oPosition = mul(patchTx, oPosition);
-	
-	// sphereify
-	oPosition.xyz = normalize(oPosition.xyz) * (radius + 5 * h);// * (radius + radius * 0.5 * h);
-	
-	float3 vPosition = oPosition.xyz;
-	
-	// in world space
-	oPosition = mul(cubeTx, oPosition);
-	
-	// projection
-	oPosition = mul(viewProj, oPosition);	
-	
-	//start of atmospheric scattering
 	float fCameraHeight = length(cameraPosition);
 	
-	float3 vRay = vPosition - cameraPosition;
+	float3 vPosition = position.xyz;			
+	
+	float3 vRay = vPosition - cameraPosition;	
 	
 	float posDotCam = dot(vPosition, -vRay) / (length(vPosition) * length(vRay));
 	
-	if (posDotCam < -0.5) {
+	if (posDotCam >= -0.2) {
 		oColor0 = float4(0.0, 0.0, 0.0, 1.0);
 		oColor1 = float4(0.0, 0.0, 0.0, 1.0);
 	} else {		
+	
 		float4 color;
+		
 		float4 xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil;
 		float xRatio, yRatio;
 		
 		float fScale = fOuterRadius - fInnerRadius;	
-#ifdef interpolation		
-		int texWidth = (int) fTexWidth;
-		int texHeight = (int) fTexHeight;
-#endif
+		//int texWidth = (int) fTexWidth;
+		//int texHeight = (int) fTexHeight;
 		
 		float3 fWavelength4;
 		fWavelength4.r = pow(fWavelength.r, 4.0);
@@ -130,11 +79,11 @@ void main_vp
 		fWavelength4.b = pow(fWavelength.b, 4.0);	
 						
 		/*
-		float3 vPosition = float3(0.5, 0.5, 0.5);
+		float3 vPosition = float3(0.0, 1.0, -1.0);
 		vPosition /= length(vPosition);
-		vPosition *= 10.05;
-		*/					
-		
+		vPosition *= 105;
+		*/			
+					
 		float fFar = length(vRay);
 		vRay = normalize(vRay);
 		oVRay = vRay;
@@ -164,9 +113,9 @@ void main_vp
 			float fCameraAltitude = (fCameraHeight - fInnerRadius) / fScale;								
 			float fCameraAngle = dot((bCameraAbove? -vRay : vRay), cameraPosition) / fCameraHeight;
 			fCameraAngle = 0.5 - fCameraAngle * 0.5;	//change to texture coordinate
-#ifndef interpolation			
-			fCameraDepth = tex2D(OpticalDepth, float2(fCameraAltitude, fCameraAngle));
-#else			
+			
+			fCameraDepth = tex2D(OpticalDepth, float2(fCameraAltitude, fCameraAngle));		
+			/*
 			float fCameraAltitudeU = fCameraAltitude * (texWidth - 1);
 			float fCameraAngleV = fCameraAngle * (texHeight - 1);
 			
@@ -185,7 +134,8 @@ void main_vp
 			xCeilYCeil = tex2D(OpticalDepth, float2(fCameraAltitudeCeil / (texWidth - 1), fCameraAngleCeil / (texHeight - 1)));
 			
 			fCameraDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);
-#endif						
+			*/
+			
 		} else {
 			//move camera to the near intersection point
 			cameraPosition += vRay * fNear;
@@ -194,8 +144,8 @@ void main_vp
 		
 		//check if length of ray and atmosphere intersection is negligible
 		if (fFar <= DELTA) {
-			oColor0 = float4(0.0, 0.0, 0.0, 1.0);			
-			oColor1 = float4(0.0, 0.0, 0.0, 1.0);			
+			oColor0 = float4(0.0, 0.0, 0.0, 1.0);
+			oColor1 = float4(0.0, 0.0, 0.0, 1.0);
 		} else {
 			
 			//initialize variables
@@ -216,9 +166,9 @@ void main_vp
 				float fAltitude = (fHeight - fInnerRadius) / fScale;					
 				float fLightAngle = dot(lightDirection, vPosition) / fHeight;
 				fLightAngle = 0.5 - fLightAngle * 0.5;	//change to texture coordinate		
-#ifndef interpolation				
+				
 				fLightDepth = tex2D(OpticalDepth, float2(fAltitude, fLightAngle));
-#else				
+				/*
 				float fAltitudeU = fAltitude * (texWidth - 1);
 				float fLightAngleV = fLightAngle * (texHeight - 1);
 				
@@ -237,7 +187,8 @@ void main_vp
 				xCeilYCeil = tex2D(OpticalDepth, float2(fAltitudeCeil / (texWidth - 1), fLightAngleCeil / (texHeight - 1)));
 				
 				fLightDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);
-#endif				
+				*/
+				
 				//check if light can be reached
 				if (fLightDepth.r > DELTA) {
 					float fRayleighDensity = fScaledLength * fLightDepth.r;
@@ -248,9 +199,9 @@ void main_vp
 					if (bCameraAbove) {
 						float fSampleAngle = dot(-vRay, vPosition) / fHeight;
 						fSampleAngle = 0.5 - fSampleAngle * 0.5;	//change to texture coordinate									
-#ifndef interpolation						
+						
 						fSampleDepth = tex2D(OpticalDepth, float2(fAltitude, fSampleAngle));
-#else						
+						/*
 						float fSampleAngleV = fSampleAngle * (texHeight - 1);					
 						
 						float fSampleAngleFloor = floor(fSampleAngleV);				
@@ -264,15 +215,16 @@ void main_vp
 						xCeilYCeil = tex2D(OpticalDepth, float2(fAltitudeCeil / (texWidth - 1), fSampleAngleCeil / (texHeight - 1)));
 						
 						fSampleDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);
-#endif						
+						*/
+						
 						fRayleighDepth += fSampleDepth.g - fCameraDepth.g;
 						fMieDepth += fSampleDepth.a - fCameraDepth.a;
 					} else {
 						float fSampleAngle = dot(vRay, vPosition) / fHeight;
 						fSampleAngle = 0.5 - fSampleAngle * 0.5;	//change to texture coordinate	
-#ifndef interpolation						
+						
 						fSampleDepth = tex2D(OpticalDepth, float2(fAltitude, fSampleAngle));
-#else
+						/*
 						float fSampleAngleV = fSampleAngle * (texHeight - 1);					
 						
 						float fSampleAngleFloor = floor(fSampleAngleV);				
@@ -286,7 +238,8 @@ void main_vp
 						xCeilYCeil = tex2D(OpticalDepth, float2(fAltitudeCeil / (texWidth - 1), fSampleAngleCeil / (texHeight - 1)));
 						
 						fSampleDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);
-#endif						
+						*/
+						
 						fRayleighDepth += fCameraDepth.g - fSampleDepth.g;
 						fMieDepth += fCameraDepth.a - fSampleDepth.a;					
 					}
@@ -311,13 +264,13 @@ void main_vp
 					vPosition += vSampleRay;				
 				}				
 			}		
-			/*
+			/*			
 			float fCos = dot(-vRay, lightDirection);
 					
 			//Get phase function value from lookup table
 			//fCos = 0.5 - fCos * 0.5;	//change to texture coordinate		
 			//float2 fPhase = tex1D(RayleighPhase, fCos).rg;
-
+			
 			//Calculate phase function value		
 			float2 fPhase;		
 			fPhase.r = 0.75 * (1.0 + fCos * fCos);
@@ -330,12 +283,10 @@ void main_vp
 			color.r = fRayleighSum.r * fPhase.r / fWavelength4.r + fMieSum.r * fPhase.g;
 			color.g = fRayleighSum.g * fPhase.r / fWavelength4.g + fMieSum.g * fPhase.g;
 			color.b = fRayleighSum.b * fPhase.r / fWavelength4.b + fMieSum.b * fPhase.g;					
-			
-			float scale = 1.0;
-			
+						
 			color.a = 1.0;		
 			
-			oColor = color;				
+			OUT.color = color;				
 			*/
 			
 			oColor0.r = fRayleighSum.r / fWavelength4.r * Kr * ESun;
@@ -349,27 +300,20 @@ void main_vp
 			oColor1.a = 1.0;
 		}
 	}
-	//end of atmospheric scattering		
+
+	//return OUT;
 }
 
 void main_fp
-(
-	float4 fRayleighSum			  : COLOR0,
-	float4 fMieSum				  : COLOR1,
-	float  uv					  : TEXCOORD0,
-	float2 posPatch				  : TEXCOORD1,
-	float3 vRay		 		  	  : TEXCOORD2,
-	out float4 oColor			  : COLOR,	
-	uniform float3		lightDirection,
-	uniform float		g,
-	uniform float4	  	clipCenter // if it is used, the x value is non zero
+(	
+	float3 vRay : TEXCOORD0,
+	float4 fRayleighSum : COLOR0,
+	float4 fMieSum : COLOR1,
+	uniform float3 lightDirection,
+	uniform float g,
+	out float4 oColor : COLOR
 )
 {
-	float2 inClipRegion = abs(posPatch - clipCenter.yz) - clipCenter.w;
-	clip(clipCenter.x * max(inClipRegion.x, inClipRegion.y));		
-	/*if (clipCenter.x > 0) {
-	}*/
-	
 	float fCos = dot(-vRay, lightDirection);
 	
 	float2 fPhase;		
@@ -382,3 +326,31 @@ void main_fp
 	
 	oColor.a = 1.0;
 }
+
+vp_output test_vp (
+vp_input IN,
+uniform sampler OpticalDepth : TEXUNIT0,
+//uniform float4 lightDirection,
+uniform float4x4 worldViewProj
+){
+	vp_output OUT;
+	
+	OUT.position = mul(worldViewProj, IN.position);
+	/*
+	float u1 = 1.0 / 128.0;
+	float u2 = 2.0 / 128.0;
+	float u3 = 1.5 / 128.0;
+	
+	float4 color1 = tex2D(OpticalDepth, float2(u1, 0.0));
+	float4 color2 = tex2D(OpticalDepth, float2(u2, 0.0));		
+	float4 color3 = lerp(color1, color2, 0.5);	//tex2D(OpticalDepth, float2(u3, 0.0));
+	
+	OUT.color = float4(color1.r, color2.r, color3.r, 0.0);
+	*/
+	//float lightDotNormal = dot(lightDirection.xyz, IN.normal.xyz);
+	//OUT.color = float4(lightDotNormal, 0.0, 0.0, 0.0);
+	OUT.color = float4(1.0, 0.0, 0.0, 0.0);
+	
+	return OUT;
+}
+
