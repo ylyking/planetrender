@@ -31,33 +31,309 @@ GeoClipmapApp::GeoClipmapApp(void)
 GeoClipmapApp::~GeoClipmapApp(void)
 {
 }
+/*
+void GeoClipmapApp::createCamera(void)
+{
+	
+	// Create the camera
+	mCamera = mSceneMgr->createCamera("PlayerCam");
 
+	//mCamera->setPosition(Vector3(0,0,25));
+		
+	//BaseApplication::createCamera();
+}
+*/
 //-------------------------------------------------------------------------------------
 void GeoClipmapApp::createScene(void)
 {
-	/*Clipmap* cm = new Clipmap(4, 129, 127);
+	/*
+	mCamera->setPosition(Vector3(0,105,0));		
+
+	mCamera->lookAt(Vector3(0,105,1));
+	mCamera->setNearClipDistance(0.01);
+	*/
+	/*
+	Clipmap* cm = new Clipmap(4, 129, 127);
 	cm->addTexture("clipmap_129x129.bmp");
 	cm->addTexture("clipmap_257x257.bmp");
 	cm->addTexture("clipmap_513x513.bmp");
-	cm->addTexture("clipmap_1025x1025.bmp");*/
+	cm->addTexture("clipmap_1025x1025.bmp");
+	*/
 
-	GeoClipmapCube* gcmcube = new GeoClipmapCube(300, 25, mSceneMgr, mCamera, 127);
+	const int rings = 90;
+	const int segments = 90;
+	const float fOuterRadius = 120.0;
+	const float fInnerRadius = 100.0;
+	const String opticalDepthTexName = "OpticalDepth";
+#if HDR == 1
+	CompositorManager::getSingleton().addCompositor(mCamera->getViewport(), "HDR");
+	CompositorManager::getSingleton().setCompositorEnabled(mCamera->getViewport(), "HDR", true);
+#endif
+
+#if ATMOSPHERE == 1		
+
+	//create opticald depth lookup texture	
+	createOpticalDepthTexture(fOuterRadius, fInnerRadius, 0.25, 0.1, 10, 128, 128, opticalDepthTexName);
+	
+	//create outer sphere
+	createSphere("outerSphereMesh", fOuterRadius, rings, segments, CLOCKWISE);
+	Entity* outerSphereEntity = mSceneMgr->createEntity("outerSphereEntity", "outerSphereMesh");
+	outerSphereEntity->setMaterialName("Atmosphere");		
+	//SceneNode* outerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+	SceneNode* outerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("OuterSphere", Vector3(-10, 0, 0));	
+	outerSphereNode->attachObject(outerSphereEntity);
+#endif		
+
+#if GEOCLIPMAP == 1
+	GeoClipmapCube* gcmcube = new GeoClipmapCube(fInnerRadius, 0, mSceneMgr, mCamera, 127, opticalDepthTexName);
+
 	SceneNode* cubeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("CubeNode", Vector3(-10, 0, 0));
 	cubeNode->attachObject(gcmcube);
+#elif GEOCLIPMAP == 0
+	//create inner sphere
+	createSphere("innerSphereMesh", fInnerRadius, rings, segments, ANTICLOCKWISE);
+	Entity* innerSphereEntity = mSceneMgr->createEntity("innerSphereEntity", "innerSphereMesh");
+#if ATMOSPHERE == 1
+	innerSphereEntity->setMaterialName("Planet");		
+#endif
+	//SceneNode* innerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+	SceneNode* innerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("InnerSphere", Vector3(-10, 0, 0));			
+	innerSphereNode->attachObject(innerSphereEntity);
+#endif	
 
 	//Entity* ogreHead = mSceneMgr->createEntity("Head", gcmcube->getMeshName(GeoClipmapCube::GCM_MESH_2XL));
 
 	//SceneNode* headNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("HeadNode", Vector3(50, 0, 0));
-	//headNode->attachObject(ogreHead);
+	//headNode->attachObject(ogreHead);	
 
 	// Set ambient light
 	mSceneMgr->setAmbientLight(ColourValue(0.5, 0.5, 0.5));
 
 	// Create a light
 	Light* l = mSceneMgr->createLight("MainLight");
-	l->setPosition(20,80,50);
+	//l->setPosition(20,80,50);	
+	l->setType(Light::LT_DIRECTIONAL);		
+
+	Ogre::Vector3 lightDir(0.0, 0.0, -1.0);
+	lightDir.normalise();
+	l->setDirection(lightDir);		
+
+	l->setDiffuseColour(1.0, 1.0, 1.0);
+	l->setSpecularColour(1.0, 1.0, 1.0);	
 
 	//mSceneMgr->showBoundingBoxes(true);
+}
+
+void GeoClipmapApp::createOpticalDepthTexture(Real fOuterRadius, Real fInnerRadius, Real fRayleighScaleHeight, Real fMieScaleHeight, int samples, int texWidth, int texHeight, String opticalDepthTexName)
+{			
+	TexturePtr pTex = TextureManager::getSingleton().createManual(opticalDepthTexName, ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, TEX_TYPE_2D, texWidth, texHeight, 0, PixelFormat::PF_FLOAT32_RGBA);
+
+	HardwarePixelBufferSharedPtr pPixelBuffer = pTex->getBuffer();
+	pPixelBuffer->lock(HardwareBuffer::HBL_NORMAL);
+	const PixelBox& pixelBox = pPixelBuffer->getCurrentLock();
+
+	Real* texData = static_cast<Real*>(pixelBox.data);
+
+	const int channels = 4;
+	const Real fScale = (fOuterRadius - fInnerRadius);
+	const Real DELTA = 1e-6;
+
+	long texIndex = 0;
+
+	for (int v =  0;v < texHeight;v++)
+	{
+		Real fCos = 1.0 - (2 * v) / ((Real) (texHeight - 1));		//change from texture coordinate [0,1] to cos(angle) [-1,1]
+		Radian fAngle = Math::ACos(fCos);								//change from cos(angle) [-1,1] to angle [0, 180]
+
+		Vector3 vRay(Math::Sin(fAngle), Math::Cos(fAngle), 0);	//angle between normal and ray to outer atmosphere
+		vRay.normalise();
+
+		for (int u = 0;u < texWidth;u++)
+		{
+			Real fHeight = DELTA + fInnerRadius + (fOuterRadius - fInnerRadius) * ((Real) u) / (texWidth - 1);
+
+			Vector3 vPos(0, fHeight, 0);	//height of sample point from planet surface
+
+			//ray and inner sphere intersection test
+			Real B = 2.0 * vPos.dotProduct(vRay);
+			Real C = vPos.dotProduct(vPos) - (fInnerRadius * fInnerRadius);
+			Real discriminant = B * B - 4 * C;
+
+			//the sample point is visible if no intersection point or both intersection points are negative (opposite to ray direction)
+			bool bVisible = (discriminant < 0 || ((0.5 * (-B - Math::Sqrt(discriminant)) <= 0) && (0.5 * (-B + Math::Sqrt(discriminant)) <= 0 )));
+
+			Real fRayleighDensityRatio;
+			Real fMieDensityRatio;
+
+			if (bVisible)
+			{
+				fRayleighDensityRatio = Math::Exp(-(fHeight - fInnerRadius) / fScale / fRayleighScaleHeight);
+				fMieDensityRatio = Math::Exp(-(fHeight - fInnerRadius) / fScale / fMieScaleHeight);
+			}
+			else
+			{
+				fRayleighDensityRatio = texData[texIndex - texWidth * channels] * 0.75;
+				fMieDensityRatio = texData[texIndex + 2 - texWidth * channels] * 0.75;
+			}
+
+			//ray and outer sphere intersection test
+			C = vPos.dotProduct(vPos) - (fOuterRadius * fOuterRadius);
+			discriminant = B * B - 4 * C;
+
+			Real ft = (-B + Math::Sqrt(discriminant)) * 0.5;
+			Real fSampleLength = ft / samples;
+			Real fScaledLength = fSampleLength / fScale;
+
+			Vector3 vSampleRay = vRay * fSampleLength;
+			vPos += vSampleRay * 0.5;	//center position of the sample ray
+
+			Real fRayleighOpticalDepth = 0;
+			Real fMieOpticalDepth = 0;
+
+			for (int i = 0;i < samples;i++)
+			{
+				Real fHeight = vPos.length();		//magnitude from origin, i.e height from planet center
+				Real fAltitude = (fHeight - fInnerRadius) / fScale;
+				fAltitude = std::max(fAltitude, 0.0f);
+
+				//calculate integration of density only
+				fRayleighOpticalDepth += Math::Exp(-fAltitude / fRayleighScaleHeight);
+				fMieOpticalDepth += Math::Exp(-fAltitude / fMieScaleHeight);
+
+				vPos += vSampleRay;		//next sample point
+			}
+
+			// Multiply the sums by the length the sample ray(s) traveled
+			fRayleighOpticalDepth *= fScaledLength;
+			fMieOpticalDepth *= fScaledLength;
+
+			// Store the results for Rayleigh to the light source, Rayleigh to the camera, Mie to the light source, and Mie to the camera				
+			if (u == 0)
+			{					
+				texData[texIndex++] = fRayleighDensityRatio;
+				texData[texIndex++] = fRayleighOpticalDepth;
+				texData[texIndex++] = fMieDensityRatio;
+				texData[texIndex++] = fMieOpticalDepth;				
+			}
+			else
+			{					
+				texData[texIndex++] = fRayleighDensityRatio;
+				texData[texIndex++] = fRayleighOpticalDepth;
+				texData[texIndex++] = fMieDensityRatio;
+				texData[texIndex++] = fMieOpticalDepth;				
+			}
+		}
+	}
+
+	pPixelBuffer->unlock();
+
+	MaterialPtr pMaterial = MaterialManager::getSingleton().getByName("Atmosphere");
+	TextureUnitState* pTexState = pMaterial->getTechnique(0)->getPass(0)->createTextureUnitState("OpticalDepth");		
+	pTexState->setBindingType(TextureUnitState::BT_VERTEX);
+
+	pMaterial = MaterialManager::getSingleton().getByName("Planet");
+	pTexState = pMaterial->getTechnique(0)->getPass(0)->createTextureUnitState("OpticalDepth");		
+	pTexState->setBindingType(TextureUnitState::BT_VERTEX);
+}
+
+void GeoClipmapApp::createSphere(const std::string& strName, const float r, const int nRings, const int nSegments, int order)
+{
+	MeshPtr pSphere = MeshManager::getSingleton().createManual(strName, ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+	SubMesh *pSphereVertex = pSphere->createSubMesh();
+
+	pSphere->sharedVertexData = new VertexData();
+	VertexData* vertexData = pSphere->sharedVertexData;
+
+	// define the vertex format
+	VertexDeclaration* vertexDecl = vertexData->vertexDeclaration;
+	size_t currOffset = 0;
+	// positions
+	vertexDecl->addElement(0, currOffset, VET_FLOAT3, VES_POSITION);
+	currOffset += VertexElement::getTypeSize(VET_FLOAT3);
+	// normals
+	vertexDecl->addElement(0, currOffset, VET_FLOAT3, VES_NORMAL);
+	currOffset += VertexElement::getTypeSize(VET_FLOAT3);
+	// two dimensional texture coordinates
+	vertexDecl->addElement(0, currOffset, VET_FLOAT2, VES_TEXTURE_COORDINATES, 0);
+	currOffset += VertexElement::getTypeSize(VET_FLOAT2);
+
+	// allocate the vertex buffer
+	vertexData->vertexCount = (nRings + 1) * (nSegments+1);
+	HardwareVertexBufferSharedPtr vBuf = HardwareBufferManager::getSingleton().createVertexBuffer(vertexDecl->getVertexSize(0), vertexData->vertexCount, HardwareBuffer::HBU_STATIC_WRITE_ONLY, false);
+	VertexBufferBinding* binding = vertexData->vertexBufferBinding;
+	binding->setBinding(0, vBuf);
+	float* pVertex = static_cast<float*>(vBuf->lock(HardwareBuffer::HBL_DISCARD));
+
+	// allocate index buffer
+	pSphereVertex->indexData->indexCount = 6 * nRings * (nSegments + 1);
+	pSphereVertex->indexData->indexBuffer = HardwareBufferManager::getSingleton().createIndexBuffer(HardwareIndexBuffer::IT_16BIT, pSphereVertex->indexData->indexCount, HardwareBuffer::HBU_STATIC_WRITE_ONLY, false);
+	HardwareIndexBufferSharedPtr iBuf = pSphereVertex->indexData->indexBuffer;
+	unsigned short* pIndices = static_cast<unsigned short*>(iBuf->lock(HardwareBuffer::HBL_DISCARD));
+
+	float fDeltaRingAngle = (Math::PI / nRings);
+	float fDeltaSegAngle = (2 * Math::PI / nSegments);
+	unsigned short wVerticeIndex = 0 ;
+
+	// Generate the group of rings for the sphere
+	for( int ring = 0; ring <= nRings; ring++ ) {
+		float r0 = r * sinf (ring * fDeltaRingAngle);
+		float y0 = r * cosf (ring * fDeltaRingAngle);
+
+		// Generate the group of segments for the current ring
+		for(int seg = 0; seg <= nSegments; seg++) {
+			float x0 = r0 * sinf(seg * fDeltaSegAngle);
+			float z0 = r0 * cosf(seg * fDeltaSegAngle);
+
+			// Add one vertex to the strip which makes up the sphere
+			*pVertex++ = x0;
+			*pVertex++ = y0;
+			*pVertex++ = z0;
+
+			Vector3 vNormal = Vector3(x0, y0, z0).normalisedCopy();
+			*pVertex++ = vNormal.x;
+			*pVertex++ = vNormal.y;
+			*pVertex++ = vNormal.z;
+
+			*pVertex++ = (float) seg / (float) nSegments;
+			*pVertex++ = (float) ring / (float) nRings;
+
+			if (ring != nRings) {
+				// each vertex (except the last) has six indices pointing to it
+				switch(order)
+				{
+				case ANTICLOCKWISE:
+					*pIndices++ = wVerticeIndex + nSegments + 1;
+					*pIndices++ = wVerticeIndex;               
+					*pIndices++ = wVerticeIndex + nSegments;
+					*pIndices++ = wVerticeIndex + nSegments + 1;
+					*pIndices++ = wVerticeIndex + 1;
+					*pIndices++ = wVerticeIndex;
+					break;
+				case CLOCKWISE:
+					*pIndices++ = wVerticeIndex + nSegments + 1;						
+					*pIndices++ = wVerticeIndex + nSegments;
+					*pIndices++ = wVerticeIndex;               
+					*pIndices++ = wVerticeIndex + nSegments + 1;						
+					*pIndices++ = wVerticeIndex;
+					*pIndices++ = wVerticeIndex + 1;
+					break;
+				}
+				wVerticeIndex ++;
+			}
+		}; // end for seg
+	} // end for ring
+
+	// Unlock
+	vBuf->unlock();
+	iBuf->unlock();
+	// Generate face list
+	pSphereVertex->useSharedVertices = true;
+
+	// the original code was missing this line:
+	pSphere->_setBounds( AxisAlignedBox( Vector3(-r, -r, -r), Vector3(r, r, r) ), false );
+	pSphere->_setBoundingSphereRadius(r);
+	// this line makes clear the mesh is loaded (avoids memory leaks)
+	pSphere->load();
 }
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32

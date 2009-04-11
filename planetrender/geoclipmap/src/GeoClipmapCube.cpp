@@ -3,21 +3,25 @@
 #include <OgreMesh.h>
 #include <OgreMeshManager.h>
 #include <OgreCamera.h>
+#include <OgreTextureManager.h> 
+#include <OgreHardwarePixelBuffer.h> 
+#include <OgreMaterialManager.h>
 #include <vector>
 #include "GeoClipmapCube.h"
 #include "Clipmap.h"
 
 using namespace Ogre;
 
-GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, unsigned int detailGridSize) :
+GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, unsigned int detailGridSize, String opticalDepthTexName) :
 m_SceneMgr(sceneMgr),
 m_Camera(camera),
 m_Radius(radius),
 m_MaxHeight(maxHeight + radius),
 m_SemiEdgeLen(radius * Math::Cos(Degree(45))),
 //m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
-m_AABB(Vector3(-(radius + maxHeight)), Vector3(radius + maxHeight))
-{
+m_AABB(Vector3(-(radius + maxHeight)), Vector3(radius + maxHeight)),
+m_OpticalDepthTexName(opticalDepthTexName)
+{	
 	//	m_ClipmapSize = cm->getLayerSize(0) - 1;//1 * (m_N - 1) ; // 64;//this is wrong, just a replacement value for debug
 	m_ClipmapSize = 129 - 1;
 	assert(m_ClipmapSize % 2 == 0);
@@ -33,7 +37,7 @@ m_AABB(Vector3(-(radius + maxHeight)), Vector3(radius + maxHeight))
 			m_Clipmaps[i]->addTexture("marsheightm" + StringConverter::toString(i) + "_" + StringConverter::toString(lod) + ".bmp");
 		}
 		m_Patches[i] = new GeoClipmapPatch(*this, i);
-	}
+	}	
 
 	// creates meshes
 	createGrids();

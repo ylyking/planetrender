@@ -2,6 +2,7 @@
 
 #include <OgreString.h>
 #include <OgreMovableObject.h>
+#include <OgreTexture.h> 
 #include "GeoClipmapPatch.h"
 #include "GeoClipmapBlock.h"
 #include <map>
@@ -43,7 +44,8 @@ namespace Ogre
 		// Meshes info
 		std::map<Ogre::String, AxisAlignedBox> m_MeshAABBs;
 		// Naming prefix for all kind of resources related to this cube
-		Ogre::String m_ResNamePrefix;
+		Ogre::String m_ResNamePrefix;	
+		String m_OpticalDepthTexName;
 
 		//// Methods
 		void createGrids();
@@ -55,7 +57,7 @@ namespace Ogre
 	public:
 
 		//// Con/Destrs
-		GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, unsigned int detailGridSize);
+		GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, unsigned int detailGridSize, String opticalDepthTexName);
 		virtual ~GeoClipmapCube(void);
 
 		//// Getters/setters
@@ -63,7 +65,8 @@ namespace Ogre
 		inline int getN() const { return m_N; }
 		int getClipmapSize() const { return m_ClipmapSize; }
 		Clipmap* getClipmap(unsigned int faceID) const { return m_Clipmaps[faceID]; }
-		Camera* getCamera() const { return m_Camera; }
+		Camera* getCamera() const { return m_Camera; }		
+		String getOpticalDepthTexName() const { return m_OpticalDepthTexName; }
 
 		//// Override
 		virtual const String& getMovableType(void) const;
@@ -80,6 +83,6 @@ namespace Ogre
 		void getFaceTransformMatrix(int faceID, Matrix4* mat) const;
 		unsigned int getClipmapDepth() const;
 		const Ogre::String& getMeshName(MeshType meshType) const;
-		const AxisAlignedBox& GeoClipmapCube::getMeshAABB(String meshName) const;
+		const AxisAlignedBox& GeoClipmapCube::getMeshAABB(String meshName) const;		
 	};
 }

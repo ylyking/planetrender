@@ -506,7 +506,7 @@ bool BaseApplication::frameStarted(const FrameEvent& evt)
 		// If this is the first frame, pick a speed
 		if (evt.timeSinceLastFrame == 0)
 		{
-			mMoveScale = 1;
+			mMoveScale = 0.1;
 			mRotScale = 0.1;
 		}
 		// Otherwise scale movement units by time passed since last frame
