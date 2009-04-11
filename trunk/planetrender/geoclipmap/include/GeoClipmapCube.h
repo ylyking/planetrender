@@ -47,6 +47,8 @@ namespace Ogre
 		Ogre::String m_ResNamePrefix;	
 		String m_OpticalDepthTexName;
 
+		Vector3 m_CamPosLocal;
+
 		//// Methods
 		void createGrids();
 		void createGrid(MeshType meshType, int vertexCountX, int vertexCountY);
@@ -67,6 +69,7 @@ namespace Ogre
 		Clipmap* getClipmap(unsigned int faceID) const { return m_Clipmaps[faceID]; }
 		Camera* getCamera() const { return m_Camera; }		
 		String getOpticalDepthTexName() const { return m_OpticalDepthTexName; }
+		Vector3 getCamPosLocal() const { return m_CamPosLocal; }
 
 		//// Override
 		virtual const String& getMovableType(void) const;
