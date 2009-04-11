@@ -362,12 +362,14 @@ inline int sign(float n)
 
 void Ogre::GeoClipmapCube::computePatchViewpoints()
 {
-	Matrix4 matLocalInv = _getParentNodeFullTransform().inverse();
+	Matrix4 matLocalInv = _getParentNodeFullTransform().inverse();	
 
 	Vector3 camPosLocal = matLocalInv * m_Camera->getPosition(); //Vector3(0, 0, 300);
 
 	// scale it from geo space to clipmap space
 	camPosLocal = camPosLocal / m_SemiEdgeLen * (m_ClipmapSize / 2.0);
+
+	m_CamPosLocal = camPosLocal;
 
 	int activeFaceID = -1;
 

@@ -86,6 +86,8 @@ void GeoClipmapBlock::_updateCustomGpuParameter(const GpuProgramParameters::Auto
 	Real Kr = 0.0025;
 	Real Km = 0.0025;
 
+	const GeoClipmapCube& pCube = reinterpret_cast<const GeoClipmapCube&>(m_parentMovObj);
+
 	switch (constantEntry.data)
 	{
 	case 1://patchTx
@@ -119,15 +121,10 @@ void GeoClipmapBlock::_updateCustomGpuParameter(const GpuProgramParameters::Auto
 			params->_writeRawConstant(constantEntry.physicalIndex, Vector4(m_parentPatch.getViewPosList().size() - 1, m_parentPatch.getViewPosList()[0].x, m_parentPatch.getViewPosList()[0].y, reinterpret_cast<const GeoClipmapCube&>(m_parentMovObj).getN() / 2 / 2));
 		else
 			params->_writeRawConstant(constantEntry.physicalIndex, Vector4(0, 0, 0, 0));
-		break;
-	/*
-	case 7:
-			params->_writeRawConstant(constantEntry.physicalIndex, Kr);
-		break;
-	case 8:
-			params->_writeRawConstant(constantEntry.physicalIndex, Km);
-		break;
-	*/
+		break;	
+	case 7:		
+		params->_writeRawConstant(constantEntry.physicalIndex, pCube.getCamPosLocal());
+		break;		
 	default:
 		Renderable::_updateCustomGpuParameter(constantEntry, params);
 	}
