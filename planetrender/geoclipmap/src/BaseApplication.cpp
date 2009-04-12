@@ -322,8 +322,8 @@ bool BaseApplication::processUnbufferedKeyInput(const FrameEvent& evt)
 		Light* l = mSceneMgr->getLight("MainLight");
 
 		Vector3 dir = l->getDirection();
-		//Ogre::Quaternion q(-mRotScale, mCamera->getOrientation().xAxis());
-		Ogre::Quaternion q(-mRotScale, Vector3::UNIT_X);
+		//Ogre::Quaternion q(mRotScale, mCamera->getOrientation().xAxis());
+		Ogre::Quaternion q(mRotScale, Vector3::UNIT_X);
 		dir = q * dir;
 		l->setDirection(dir);
 	}
@@ -333,8 +333,8 @@ bool BaseApplication::processUnbufferedKeyInput(const FrameEvent& evt)
 		Light* l = mSceneMgr->getLight("MainLight");
 
 		Vector3 dir = l->getDirection();
-		//Ogre::Quaternion q(mRotScale, mCamera->getOrientation().xAxis());
-		Ogre::Quaternion q(mRotScale, Vector3::UNIT_X);
+		//Ogre::Quaternion q(-mRotScale, mCamera->getOrientation().xAxis());
+		Ogre::Quaternion q(-mRotScale, Vector3::UNIT_X);
 		dir = q * dir;
 		l->setDirection(dir);
 	}
