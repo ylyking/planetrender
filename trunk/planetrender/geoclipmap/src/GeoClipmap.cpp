@@ -31,27 +31,10 @@ GeoClipmapApp::GeoClipmapApp(void)
 GeoClipmapApp::~GeoClipmapApp(void)
 {
 }
-/*
-void GeoClipmapApp::createCamera(void)
-{
-	
-	// Create the camera
-	mCamera = mSceneMgr->createCamera("PlayerCam");
 
-	//mCamera->setPosition(Vector3(0,0,25));
-		
-	//BaseApplication::createCamera();
-}
-*/
 //-------------------------------------------------------------------------------------
 void GeoClipmapApp::createScene(void)
-{
-	/*
-	mCamera->setPosition(Vector3(0,105,0));		
-
-	mCamera->lookAt(Vector3(0,105,1));
-	mCamera->setNearClipDistance(0.01);
-	*/
+{	
 	/*
 	Clipmap* cm = new Clipmap(4, 129, 127);
 	cm->addTexture("clipmap_129x129.bmp");
@@ -80,14 +63,14 @@ void GeoClipmapApp::createScene(void)
 	Entity* outerSphereEntity = mSceneMgr->createEntity("outerSphereEntity", "outerSphereMesh");
 	outerSphereEntity->setMaterialName("Atmosphere");		
 	//SceneNode* outerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
-	SceneNode* outerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("OuterSphere", Vector3(-10, 0, 0));	
+	SceneNode* outerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("OuterSphere", mCenter);	
 	outerSphereNode->attachObject(outerSphereEntity);
 #endif		
 
 #if GEOCLIPMAP == 1
 	GeoClipmapCube* gcmcube = new GeoClipmapCube(fInnerRadius, 0, mSceneMgr, mCamera, 127, opticalDepthTexName);
 
-	SceneNode* cubeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("CubeNode", Vector3(-10, 0, 0));
+	SceneNode* cubeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("CubeNode", mCenter);
 	cubeNode->attachObject(gcmcube);
 #elif GEOCLIPMAP == 0
 	//create inner sphere
@@ -97,7 +80,7 @@ void GeoClipmapApp::createScene(void)
 	innerSphereEntity->setMaterialName("Planet");		
 #endif
 	//SceneNode* innerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
-	SceneNode* innerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("InnerSphere", Vector3(-10, 0, 0));			
+	SceneNode* innerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("InnerSphere", mCenter);			
 	innerSphereNode->attachObject(innerSphereEntity);
 #endif	
 

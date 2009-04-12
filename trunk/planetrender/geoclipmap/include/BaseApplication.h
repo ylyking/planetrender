@@ -97,6 +97,8 @@ protected:
 	Radian mRotX, mRotY;
 	TextureFilterOptions mFiltering;
 	int mAniso;
+
+	Vector3 mCenter;
 };
 
 #endif // #ifndef __BaseApplication_h_

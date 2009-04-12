@@ -24,7 +24,7 @@ LGPL like the rest of the OGRE engine.
 #define ANTICLOCKWISE 1
 #define GEOCLIPMAP 1
 #define ATMOSPHERE 1
-#define HDR 0
+#define HDR 1
 
 #include "BaseApplication.h"
 #if OGRE_PLATFORM == OGRE_PLATFORM_WIN32

@@ -52,8 +52,9 @@ BaseApplication::BaseApplication(void)
 	mRotX(0),
 	mRotY(0),
 	mFiltering(TFO_BILINEAR),
-	mAniso(1)
-{
+	mAniso(1),
+	mCenter(Vector3(-10, 0, 0))
+{	
 }
 
 //-------------------------------------------------------------------------------------
@@ -100,16 +101,20 @@ void BaseApplication::chooseSceneManager(void)
 //-------------------------------------------------------------------------------------
 void BaseApplication::createCamera(void)
 {
-	// Create the camera
+	// Create the camera	
 	mCamera = mSceneMgr->createCamera("PlayerCam");
-
+	
+	mCamera->setPosition(Vector3(-10,105,0));		
+	mCamera->lookAt(Vector3(-10,105,1));
+	mCamera->setNearClipDistance(5);	
+	/*
 	// Position it at 500 in Z direction
 	mCamera->setPosition(Vector3(0, 0, 300));
 	//mCamera->setPosition(Vector3(-225.385, 197.12, 209.506));
 	// Look back along -Z
 	mCamera->lookAt(Vector3(0,0,-300));
 	mCamera->setNearClipDistance(5);
-
+	*/
 }
 //-------------------------------------------------------------------------------------
 void BaseApplication::createFrameListener(void)
@@ -306,13 +311,13 @@ bool BaseApplication::processUnbufferedKeyInput(const FrameEvent& evt)
 	}
 
 	/* Move camera forward by keypress. */
-	if (mInputDevice->isKeyDown(KC_UP) || mInputDevice->isKeyDown(KC_W) )
+	if (mInputDevice->isKeyDown(KC_W) )
 	{
 		mTranslateVector.z = -mMoveScale;
 	}
 
 	/* Move camera backward by keypress. */
-	if (mInputDevice->isKeyDown(KC_DOWN) || mInputDevice->isKeyDown(KC_S) )
+	if (mInputDevice->isKeyDown(KC_S) )
 	{
 		mTranslateVector.z = mMoveScale;
 	}
@@ -329,14 +334,36 @@ bool BaseApplication::processUnbufferedKeyInput(const FrameEvent& evt)
 		mTranslateVector.y = -mMoveScale;
 	}
 
+	if (mInputDevice->isKeyDown(KC_UP))
+	{						
+		Vector3 ray = mCamera->getPosition() - mCenter;
+		mCamera->moveRelative(Vector3(0, -ray.length(), 0));		
+		mCamera->pitch(-mRotScale);		
+		mCamera->moveRelative(Vector3(0, ray.length(), 0));		
+	}
+
+	if (mInputDevice->isKeyDown(KC_DOWN))
+	{
+		Vector3 ray = mCamera->getPosition() - mCenter;
+		mCamera->moveRelative(Vector3(0, -ray.length(), 0));		
+		mCamera->pitch(mRotScale);					
+		mCamera->moveRelative(Vector3(0, ray.length(), 0));				
+	}
+
 	if (mInputDevice->isKeyDown(KC_RIGHT))
 	{
-		mCamera->yaw(-mRotScale);
+		Vector3 ray = mCamera->getPosition() - mCenter;
+		mCamera->moveRelative(Vector3(0, -ray.length(), 0));		
+		mCamera->roll(-mRotScale);
+		mCamera->moveRelative(Vector3(0, ray.length(), 0));						
 	}
 
 	if (mInputDevice->isKeyDown(KC_LEFT))
 	{
-		mCamera->yaw(mRotScale);
+		Vector3 ray = mCamera->getPosition() - mCenter;
+		mCamera->moveRelative(Vector3(0, -ray.length(), 0));		
+		mCamera->roll(mRotScale);
+		mCamera->moveRelative(Vector3(0, ray.length(), 0));				
 	}
 
 	if( mInputDevice->isKeyDown( KC_ESCAPE) )
@@ -462,8 +489,6 @@ void BaseApplication::moveCamera()
 	mCamera->yaw(mRotX);
 	mCamera->pitch(mRotY);
 	mCamera->moveRelative(mTranslateVector);
-
-
 }
 //-------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------
@@ -506,7 +531,7 @@ bool BaseApplication::frameStarted(const FrameEvent& evt)
 		// If this is the first frame, pick a speed
 		if (evt.timeSinceLastFrame == 0)
 		{
-			mMoveScale = 0.1;
+			mMoveScale = 0.01;
 			mRotScale = 0.1;
 		}
 		// Otherwise scale movement units by time passed since last frame
