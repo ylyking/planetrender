@@ -16,8 +16,8 @@ vertex_program GeoClipmapWithAtmosphereVP cg
 		//param_named_auto cameraPosition camera_position
 		param_named fOuterRadius float 120.0
 		param_named fInnerRadius float 100.0
-		param_named Kr float 0.0025
-		param_named Km float 0.0025		
+		param_named Kr float 0.005
+		param_named Km float 0.025		
 		param_named PI float 3.14159
 		//param_named g float -0.75
 		param_named ESun float 15.0
