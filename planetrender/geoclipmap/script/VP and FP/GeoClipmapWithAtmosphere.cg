@@ -1,5 +1,5 @@
 
-//#define interpolation 1
+#define interpolation 1
 
 float4 interpolate
 (

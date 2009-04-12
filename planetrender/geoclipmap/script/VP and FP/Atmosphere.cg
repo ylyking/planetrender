@@ -1,3 +1,5 @@
+#define interpolation 1
+
 struct vp_input {
 	float4 position : POSITION;
 	float4 normal : NORMAL;
@@ -38,8 +40,10 @@ uniform float ESun,
 uniform float fSamples,
 uniform float3 fWavelength,
 uniform float DELTA,
-//uniform float fTexWidth,
-//uniform float fTexHeight,
+#ifdef interpolation
+uniform float fTexWidth,
+uniform float fTexHeight,
+#endif
 float4 position : POSITION,
 out float4 oPosition : POSITION,
 out float3 oVRay : TEXCOORD0,
@@ -70,8 +74,10 @@ out float4 oColor1 : COLOR1
 		float xRatio, yRatio;
 		
 		float fScale = fOuterRadius - fInnerRadius;	
-		//int texWidth = (int) fTexWidth;
-		//int texHeight = (int) fTexHeight;
+#ifdef interpolation
+		int texWidth = (int) fTexWidth;
+		int texHeight = (int) fTexHeight;
+#endif
 		
 		float3 fWavelength4;
 		fWavelength4.r = pow(fWavelength.r, 4.0);
@@ -113,9 +119,9 @@ out float4 oColor1 : COLOR1
 			float fCameraAltitude = (fCameraHeight - fInnerRadius) / fScale;								
 			float fCameraAngle = dot((bCameraAbove? -vRay : vRay), cameraPosition) / fCameraHeight;
 			fCameraAngle = 0.5 - fCameraAngle * 0.5;	//change to texture coordinate
-			
+#ifndef interpolation
 			fCameraDepth = tex2D(OpticalDepth, float2(fCameraAltitude, fCameraAngle));		
-			/*
+#else			
 			float fCameraAltitudeU = fCameraAltitude * (texWidth - 1);
 			float fCameraAngleV = fCameraAngle * (texHeight - 1);
 			
@@ -133,9 +139,8 @@ out float4 oColor1 : COLOR1
 			xFloorYCeil = tex2D(OpticalDepth, float2(fCameraAltitudeFloor / (texWidth - 1), fCameraAngleCeil / (texHeight - 1)));		
 			xCeilYCeil = tex2D(OpticalDepth, float2(fCameraAltitudeCeil / (texWidth - 1), fCameraAngleCeil / (texHeight - 1)));
 			
-			fCameraDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);
-			*/
-			
+			fCameraDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);			
+#endif			
 		} else {
 			//move camera to the near intersection point
 			cameraPosition += vRay * fNear;
@@ -166,9 +171,9 @@ out float4 oColor1 : COLOR1
 				float fAltitude = (fHeight - fInnerRadius) / fScale;					
 				float fLightAngle = dot(lightDirection, vPosition) / fHeight;
 				fLightAngle = 0.5 - fLightAngle * 0.5;	//change to texture coordinate		
-				
+#ifndef interpolation				
 				fLightDepth = tex2D(OpticalDepth, float2(fAltitude, fLightAngle));
-				/*
+#else				
 				float fAltitudeU = fAltitude * (texWidth - 1);
 				float fLightAngleV = fLightAngle * (texHeight - 1);
 				
@@ -186,9 +191,8 @@ out float4 oColor1 : COLOR1
 				xFloorYCeil = tex2D(OpticalDepth, float2(fAltitudeFloor / (texWidth - 1), fLightAngleCeil / (texHeight - 1)));		
 				xCeilYCeil = tex2D(OpticalDepth, float2(fAltitudeCeil / (texWidth - 1), fLightAngleCeil / (texHeight - 1)));
 				
-				fLightDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);
-				*/
-				
+				fLightDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);				
+#endif				
 				//check if light can be reached
 				if (fLightDepth.r > DELTA) {
 					float fRayleighDensity = fScaledLength * fLightDepth.r;
@@ -199,9 +203,9 @@ out float4 oColor1 : COLOR1
 					if (bCameraAbove) {
 						float fSampleAngle = dot(-vRay, vPosition) / fHeight;
 						fSampleAngle = 0.5 - fSampleAngle * 0.5;	//change to texture coordinate									
-						
+#ifndef interpolation						
 						fSampleDepth = tex2D(OpticalDepth, float2(fAltitude, fSampleAngle));
-						/*
+#else						
 						float fSampleAngleV = fSampleAngle * (texHeight - 1);					
 						
 						float fSampleAngleFloor = floor(fSampleAngleV);				
@@ -214,17 +218,16 @@ out float4 oColor1 : COLOR1
 						xFloorYCeil = tex2D(OpticalDepth, float2(fAltitudeFloor / (texWidth - 1), fSampleAngleCeil / (texHeight - 1)));		
 						xCeilYCeil = tex2D(OpticalDepth, float2(fAltitudeCeil / (texWidth - 1), fSampleAngleCeil / (texHeight - 1)));
 						
-						fSampleDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);
-						*/
-						
+						fSampleDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);						
+#endif						
 						fRayleighDepth += fSampleDepth.g - fCameraDepth.g;
 						fMieDepth += fSampleDepth.a - fCameraDepth.a;
 					} else {
 						float fSampleAngle = dot(vRay, vPosition) / fHeight;
 						fSampleAngle = 0.5 - fSampleAngle * 0.5;	//change to texture coordinate	
-						
+#ifndef interpolation						
 						fSampleDepth = tex2D(OpticalDepth, float2(fAltitude, fSampleAngle));
-						/*
+#else						
 						float fSampleAngleV = fSampleAngle * (texHeight - 1);					
 						
 						float fSampleAngleFloor = floor(fSampleAngleV);				
@@ -237,9 +240,8 @@ out float4 oColor1 : COLOR1
 						xFloorYCeil = tex2D(OpticalDepth, float2(fAltitudeFloor / (texWidth - 1), fSampleAngleCeil / (texHeight - 1)));		
 						xCeilYCeil = tex2D(OpticalDepth, float2(fAltitudeCeil / (texWidth - 1), fSampleAngleCeil / (texHeight - 1)));
 						
-						fSampleDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);
-						*/
-						
+						fSampleDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);						
+#endif						
 						fRayleighDepth += fCameraDepth.g - fSampleDepth.g;
 						fMieDepth += fCameraDepth.a - fSampleDepth.a;					
 					}

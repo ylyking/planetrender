@@ -11,16 +11,16 @@ vertex_program AtmosphereVP cg
 		param_named_auto cameraPosition camera_position_object_space		
 		param_named fOuterRadius float 120.0
 		param_named fInnerRadius float 100.0
-		param_named Kr float 0.0025
-		param_named Km float 0.0025
+		param_named Kr float 0.005
+		param_named Km float 0.025
 		param_named PI float 3.14159
 		//param_named g float -0.75
 		param_named ESun float 15.0
 		param_named fSamples float 15.0
 		param_named fWavelength float3 0.65 0.57 0.475
 		param_named DELTA float 1e-6
-		//param_named fTexWidth float 128.0
-		//param_named fTexHeight float 128.0		
+		param_named fTexWidth float 128.0
+		param_named fTexHeight float 128.0		
 	}
 }
 
@@ -55,7 +55,7 @@ material Atmosphere
 	technique
 	{
 		pass
-		{						
+		{				
 			vertex_program_ref AtmosphereVP
 			//vertex_program_ref AtmosphereTestVP
 			{
