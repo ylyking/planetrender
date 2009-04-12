@@ -362,9 +362,18 @@ inline int sign(float n)
 
 void Ogre::GeoClipmapCube::computePatchViewpoints()
 {
-	Matrix4 matLocalInv = _getParentNodeFullTransform().inverse();	
+	Matrix4 matLocalInv = _getParentNodeFullTransform().inverse();
 
 	Vector3 camPosLocal = matLocalInv * m_Camera->getPosition(); //Vector3(0, 0, 300);
+
+	// find out the lod level
+	int maxLodLvl; // self exclusive
+
+	float camHeight = camPosLocal.length() - (m_Radius * 1.1);
+	if (camHeight < 0) camHeight = 0;
+
+	maxLodLvl = getClipmapDepth() - camHeight / 70;
+	if (maxLodLvl < 1) maxLodLvl = 1;
 
 	// scale it from geo space to clipmap space
 	camPosLocal = camPosLocal / m_SemiEdgeLen * (m_ClipmapSize / 2.0);
@@ -424,8 +433,6 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 		{1,	0,	2,	3}
 	};
 
-	// find out the lod level
-	int maxLodLvl = getClipmapDepth(); // self exclusive
 	std::vector<Vector2> viewPosLists[6];
 
 	// resize the view post lists
@@ -523,16 +530,22 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 			if (yn <= eps)
 				maxLodLvlAdjacent[adjacentFaceTable[activeFaceID][3]] = lodLvl;
 		}
+		// check that if last frame has less details than the new frame
 		const std::vector<Vector2>& oldViewPosList = m_Patches[activeFaceID]->getViewPosList();
 		if (oldViewPosList.size() <= lodLvl) {
 			updated = true;
 			continue;
 		}
 
+		// check that is the position of last frame is the same as the new frame
 		Vector2 oldViewPos = oldViewPosList[lodLvl];
 		if ((oldViewPos - viewPosLists[activeFaceID][lodLvl]).length() > 1)
 			updated = true;
 	}
+
+	// if the last frame has more details than the new frame...
+	if (m_Patches[activeFaceID]->getViewPosList().size() > maxLodLvl)
+		updated = true;
 
 	// update is not needed, return
 	if (!updated) return;

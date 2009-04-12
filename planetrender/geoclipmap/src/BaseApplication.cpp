@@ -103,18 +103,13 @@ void BaseApplication::createCamera(void)
 {
 	// Create the camera	
 	mCamera = mSceneMgr->createCamera("PlayerCam");
-	
-	mCamera->setPosition(Vector3(-10,105,0));		
-	mCamera->lookAt(Vector3(-10,105,1));
-	mCamera->setNearClipDistance(5);	
-	/*
-	// Position it at 500 in Z direction
-	mCamera->setPosition(Vector3(0, 0, 300));
-	//mCamera->setPosition(Vector3(-225.385, 197.12, 209.506));
-	// Look back along -Z
-	mCamera->lookAt(Vector3(0,0,-300));
-	mCamera->setNearClipDistance(5);
-	*/
+
+	Vector3 pos(0, 110, 0);
+	pos += mCenter;	
+
+	mCamera->setPosition(pos);		
+	mCamera->lookAt(pos + Vector3(0, 0, 1));
+	mCamera->setNearClipDistance(1);
 }
 //-------------------------------------------------------------------------------------
 void BaseApplication::createFrameListener(void)
@@ -322,6 +317,28 @@ bool BaseApplication::processUnbufferedKeyInput(const FrameEvent& evt)
 		mTranslateVector.z = mMoveScale;
 	}
 
+	if (mInputDevice->isKeyDown(KC_I) )
+	{
+		Light* l = mSceneMgr->getLight("MainLight");
+
+		Vector3 dir = l->getDirection();
+		//Ogre::Quaternion q(-mRotScale, mCamera->getOrientation().xAxis());
+		Ogre::Quaternion q(-mRotScale, Vector3::UNIT_X);
+		dir = q * dir;
+		l->setDirection(dir);
+	}
+
+	if (mInputDevice->isKeyDown(KC_K) )
+	{
+		Light* l = mSceneMgr->getLight("MainLight");
+
+		Vector3 dir = l->getDirection();
+		//Ogre::Quaternion q(mRotScale, mCamera->getOrientation().xAxis());
+		Ogre::Quaternion q(mRotScale, Vector3::UNIT_X);
+		dir = q * dir;
+		l->setDirection(dir);
+	}
+
 	if (mInputDevice->isKeyDown(KC_PGUP))
 	{
 		// Move camera up
@@ -336,34 +353,50 @@ bool BaseApplication::processUnbufferedKeyInput(const FrameEvent& evt)
 
 	if (mInputDevice->isKeyDown(KC_UP))
 	{						
-		Vector3 ray = mCamera->getPosition() - mCenter;
-		mCamera->moveRelative(Vector3(0, -ray.length(), 0));		
-		mCamera->pitch(-mRotScale);		
-		mCamera->moveRelative(Vector3(0, ray.length(), 0));		
+		Vector3 ray = mCamera->getPosition() - mCenter;				
+		Ogre::Quaternion q(-mRotScale, mCamera->getOrientation().xAxis());
+		//mCamera->rotate(q);				
+		/**/
+		mCamera->move(-ray);
+		mCamera->pitch(-mRotScale);
+		ray = q * ray;
+		mCamera->move(ray);
 	}
 
 	if (mInputDevice->isKeyDown(KC_DOWN))
 	{
 		Vector3 ray = mCamera->getPosition() - mCenter;
-		mCamera->moveRelative(Vector3(0, -ray.length(), 0));		
-		mCamera->pitch(mRotScale);					
-		mCamera->moveRelative(Vector3(0, ray.length(), 0));				
+		Ogre::Quaternion q(mRotScale, mCamera->getOrientation().xAxis());		
+		//mCamera->rotate(q);		
+		/**/
+		mCamera->move(-ray);
+		mCamera->pitch(mRotScale);						
+		ray = q * ray;
+		mCamera->move(ray);		
 	}
 
 	if (mInputDevice->isKeyDown(KC_RIGHT))
 	{
-		Vector3 ray = mCamera->getPosition() - mCenter;
-		mCamera->moveRelative(Vector3(0, -ray.length(), 0));		
+		Vector3 ray = mCamera->getPosition() - mCenter;				
+		Ogre::Quaternion q(-mRotScale, mCamera->getOrientation().zAxis());
+		//mCamera->rotate(q);				
+		/**/
+		mCamera->move(-ray);
 		mCamera->roll(-mRotScale);
-		mCamera->moveRelative(Vector3(0, ray.length(), 0));						
+		ray = q * ray;
+		mCamera->move(ray);						
 	}
 
 	if (mInputDevice->isKeyDown(KC_LEFT))
 	{
-		Vector3 ray = mCamera->getPosition() - mCenter;
-		mCamera->moveRelative(Vector3(0, -ray.length(), 0));		
+		Vector3 ray = mCamera->getPosition() - mCenter;				
+		Ogre::Quaternion q(mRotScale, mCamera->getOrientation().zAxis());
+		//mCamera->rotate(q);				
+		/**/
+		mCamera->move(-ray);
 		mCamera->roll(mRotScale);
-		mCamera->moveRelative(Vector3(0, ray.length(), 0));				
+		ray = q * ray;
+		mCamera->move(ray);		
 	}
 
 	if( mInputDevice->isKeyDown( KC_ESCAPE) )

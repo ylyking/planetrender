@@ -314,16 +314,18 @@ void GeoClipmapPatch::createMat()
 
 		TextureUnitState* tus;
 
+		tus = pass->createTextureUnitState("earth_h.bmp");
+		tus->setBindingType(TextureUnitState::BT_FRAGMENT);	
+
 		tus = pass->createTextureUnitState(m_Parent.getClipmap(m_FaceID)->getLayerTexture(lodLvl)->getName());
 		tus->setBindingType(TextureUnitState::BT_VERTEX);	
 
 #if ATMOSPHERE == 1
 		tus = pass->createTextureUnitState(m_Parent.getOpticalDepthTexName());
-		tus->setBindingType(TextureUnitState::BT_VERTEX);
-#else				
-		tus = pass->createTextureUnitState("mars_h.bmp");
+		tus->setBindingType(TextureUnitState::BT_VERTEX);	
 #endif
 		
+
 		m_TFillMatList.push_back(m_NormalMatList[lodLvl]->clone
 				(patchNamePrefix + StringConverter::toString(lodLvl) + "_TFill")
 			);

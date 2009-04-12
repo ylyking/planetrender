@@ -93,7 +93,7 @@ void main_vp
 	oPosition = mul(patchTx, oPosition);
 	
 	// sphereify
-	oPosition.xyz = normalize(oPosition.xyz) * (radius + 5 * h);// * (radius + radius * 0.5 * h);
+	oPosition.xyz = normalize(oPosition.xyz) * (radius + 15 * h);// * (radius + radius * 0.5 * h);
 	
 	float3 vPosition = oPosition.xyz;
 	

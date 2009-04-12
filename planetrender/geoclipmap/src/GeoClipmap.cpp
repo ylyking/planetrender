@@ -213,10 +213,11 @@ void GeoClipmapApp::createOpticalDepthTexture(Real fOuterRadius, Real fInnerRadi
 	MaterialPtr pMaterial = MaterialManager::getSingleton().getByName("Atmosphere");
 	TextureUnitState* pTexState = pMaterial->getTechnique(0)->getPass(0)->createTextureUnitState("OpticalDepth");		
 	pTexState->setBindingType(TextureUnitState::BT_VERTEX);
-
+#if GEOCLIPMAP == 0
 	pMaterial = MaterialManager::getSingleton().getByName("Planet");
 	pTexState = pMaterial->getTechnique(0)->getPass(0)->createTextureUnitState("OpticalDepth");		
 	pTexState->setBindingType(TextureUnitState::BT_VERTEX);
+#endif
 }
 
 void GeoClipmapApp::createSphere(const std::string& strName, const float r, const int nRings, const int nSegments, int order)
