@@ -1,4 +1,3 @@
-
 //#define interpolation 1
 
 float4 interpolate
@@ -94,7 +93,7 @@ void main_vp
 	oPosition = mul(patchTx, oPosition);
 	
 	// sphereify
-	oPosition.xyz = normalize(oPosition.xyz) * (radius + 25 * h);// * (radius + radius * 0.5 * h);
+	oPosition.xyz = normalize(oPosition.xyz) * (radius + 5 * h);// * (radius + radius * 0.5 * h);
 	
 	float3 vPosition = oPosition.xyz;
 	
@@ -359,17 +358,17 @@ void main_vp
 
 void main_fp
 (
-	float3 fRayleighSum			: COLOR0,
+	float3 fRayleighSum			  : COLOR0,
 	float3 fMieSum				  : COLOR1,
-	float  uv					  		: TEXCOORD0,
+	float  uv					  : TEXCOORD0,
 	float2 posPatch				  : TEXCOORD1,
 	float3 vRay		 		  	  : TEXCOORD2,
 	float3 attenuation		  	  : TEXCOORD3,
 	out float4 oColor			  : COLOR,
 	uniform sampler1D heightScale : TEXUNIT0,
-	uniform float3		lightDirection,
-	uniform float		g,
-	uniform float4	  	clipCenter // if it is used, the x value is non zero
+	uniform float3 lightDirection,
+	uniform float g,
+	uniform float4 clipCenter // if it is used, the x value is non zero
 )
 {
 	float2 inClipRegion = abs(posPatch - clipCenter.yz) - clipCenter.w;
@@ -383,7 +382,6 @@ void main_fp
 	
 	float3 terraincol = tex1D(heightScale, uv).rgb;
 	
-	
 	fPhase.r = 0.75 * (1.0 + fCos * fCos);
 	fPhase.g = 1.5 * ((1.0 - g * g) / (2.0 + g * g)) * (1.0 + fCos * fCos) / pow(1.0 + g * g - 2.0 * g * fCos, 1.5);
 	
@@ -394,6 +392,7 @@ void main_fp
 	float3 scattercol = fRayleighSum * fPhase.r + fMieSum * fPhase.g;
 	
 	oColor.rgb = scattercol + attenuation * clamp(10 * length(scattercol), 0, 1) * terraincol ;//length(oColor.rgb) * 6 * terraincol;
+	//oColor.rgb = scattercol + attenuation * terraincol ;//length(oColor.rgb) * 6 * terraincol;
 	//oColor.rgb = terraincol;
 	oColor.a = 1.0;
 }
