@@ -104,12 +104,12 @@ void BaseApplication::createCamera(void)
 	// Create the camera	
 	mCamera = mSceneMgr->createCamera("PlayerCam");
 
-	Vector3 pos(0, 110, 0);
+	Vector3 pos(0, 105, 0);
 	pos += mCenter;	
 
 	mCamera->setPosition(pos);		
 	mCamera->lookAt(pos + Vector3(0, 0, 1));
-	mCamera->setNearClipDistance(1);
+	mCamera->setNearClipDistance(5);
 }
 //-------------------------------------------------------------------------------------
 void BaseApplication::createFrameListener(void)
