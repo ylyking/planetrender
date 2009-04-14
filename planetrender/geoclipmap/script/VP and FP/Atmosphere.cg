@@ -45,8 +45,10 @@ uniform float fTexWidth,
 uniform float fTexHeight,
 #endif
 float4 position : POSITION,
+float4 normal	: NORMAL,
 out float4 oPosition : POSITION,
 out float3 oVRay : TEXCOORD0,
+out float oPosDotCam : TEXCOORD1,
 out float4 oColor0 : COLOR0,
 out float4 oColor1 : COLOR1
 ) 
@@ -61,9 +63,12 @@ out float4 oColor1 : COLOR1
 	
 	float3 vRay = vPosition - cameraPosition;	
 	
+	//float posDotCam = dot(normalize(vPosition), normalize(cameraPosition));
 	float posDotCam = dot(vPosition, -vRay) / (length(vPosition) * length(vRay));
 	
-	if (posDotCam >= -0.2) {
+	oPosDotCam = posDotCam;
+	
+	if (posDotCam > 0) {
 		oColor0 = float4(0.0, 0.0, 0.0, 1.0);
 		oColor1 = float4(0.0, 0.0, 0.0, 1.0);
 	} else {		
@@ -309,6 +314,7 @@ out float4 oColor1 : COLOR1
 void main_fp
 (	
 	float3 vRay : TEXCOORD0,
+	float3 posDotCam : TEXCOORD1,
 	float4 fRayleighSum : COLOR0,
 	float4 fMieSum : COLOR1,
 	uniform float3 lightDirection,
@@ -316,6 +322,9 @@ void main_fp
 	out float4 oColor : COLOR
 )
 {
+	if (posDotCam > -0.2)
+		return;
+		
 	float fCos = dot(-vRay, lightDirection);
 	
 	float2 fPhase;		

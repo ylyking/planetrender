@@ -61,8 +61,7 @@ void GeoClipmapApp::createScene(void)
 	//create outer sphere
 	createSphere("outerSphereMesh", fOuterRadius, rings, segments, CLOCKWISE);
 	Entity* outerSphereEntity = mSceneMgr->createEntity("outerSphereEntity", "outerSphereMesh");
-	outerSphereEntity->setMaterialName("Atmosphere");		
-	//SceneNode* outerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+	outerSphereEntity->setMaterialName("Atmosphere");			
 	SceneNode* outerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("OuterSphere", mCenter);	
 	outerSphereNode->attachObject(outerSphereEntity);
 #endif		
@@ -78,8 +77,7 @@ void GeoClipmapApp::createScene(void)
 	Entity* innerSphereEntity = mSceneMgr->createEntity("innerSphereEntity", "innerSphereMesh");
 #if ATMOSPHERE == 1
 	innerSphereEntity->setMaterialName("Planet");		
-#endif
-	//SceneNode* innerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+#endif	
 	SceneNode* innerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("InnerSphere", mCenter);			
 	innerSphereNode->attachObject(innerSphereEntity);
 #endif	
@@ -125,7 +123,7 @@ void GeoClipmapApp::createOpticalDepthTexture(Real fOuterRadius, Real fInnerRadi
 
 	for (int v =  0;v < texHeight;v++)
 	{
-		Real fCos = 1.0 - (2 * v) / ((Real) (texHeight - 1));		//change from texture coordinate [0,1] to cos(angle) [-1,1]
+		Real fCos = 1.0 - ((Real) (2 * v)) / ((Real) (texHeight - 1));		//change from texture coordinate [0,1] to cos(angle) [-1,1]
 		Radian fAngle = Math::ACos(fCos);								//change from cos(angle) [-1,1] to angle [0, 180]
 
 		Vector3 vRay(Math::Sin(fAngle), Math::Cos(fAngle), 0);	//angle between normal and ray to outer atmosphere
@@ -274,9 +272,19 @@ void GeoClipmapApp::createSphere(const std::string& strName, const float r, cons
 			*pVertex++ = z0;
 
 			Vector3 vNormal = Vector3(x0, y0, z0).normalisedCopy();
-			*pVertex++ = vNormal.x;
-			*pVertex++ = vNormal.y;
-			*pVertex++ = vNormal.z;
+			switch(order)
+			{
+			case ANTICLOCKWISE:
+				*pVertex++ = vNormal.x;
+				*pVertex++ = vNormal.y;
+				*pVertex++ = vNormal.z;
+				break;
+			case CLOCKWISE:
+				*pVertex++ = -vNormal.x;
+				*pVertex++ = -vNormal.y;
+				*pVertex++ = -vNormal.z;
+				break;
+			}
 
 			*pVertex++ = (float) seg / (float) nSegments;
 			*pVertex++ = (float) ring / (float) nRings;

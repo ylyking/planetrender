@@ -315,6 +315,8 @@ void GeoClipmapPatch::createMat()
 		TextureUnitState* tus;
 
 		tus = pass->createTextureUnitState("earth_h.bmp");
+		//tus = pass->createTextureUnitState("mars_h.bmp");
+
 		tus->setBindingType(TextureUnitState::BT_FRAGMENT);	
 
 		tus = pass->createTextureUnitState(m_Parent.getClipmap(m_FaceID)->getLayerTexture(lodLvl)->getName());

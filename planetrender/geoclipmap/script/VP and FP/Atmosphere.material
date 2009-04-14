@@ -33,7 +33,7 @@ fragment_program AtmosphereFP cg
 	default_params
 	{		
 		param_named_auto lightDirection light_position_object_space 0		
-		param_named g float -0.75		
+		param_named g float -0.95		
 	}
 }
 
