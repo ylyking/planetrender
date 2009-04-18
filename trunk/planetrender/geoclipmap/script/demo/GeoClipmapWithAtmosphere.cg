@@ -1,0 +1,429 @@
+//#define CLIP 1
+#define interpolation 1
+
+float4 interpolate
+(
+float4 xFloorYFloor, 
+float4 xCeilYFloor,
+float4 xFloorYCeil,
+float4 xCeilYCeil,
+float xRatio,
+float yRatio
+) 
+{		
+	return xFloorYFloor * (1 - xRatio) * (1 - yRatio) + 
+		   xCeilYFloor * xRatio * (1 - yRatio) + 
+		   xFloorYCeil * (1 - xRatio) * yRatio + 
+		   xCeilYCeil * xRatio * yRatio;
+}
+
+void main_vp
+(
+	//input
+    float4 position			 : POSITION,
+	float4 normal			 : NORMAL,
+	//output
+    out float4 oPosition	 : POSITION,	
+    out float4 oColor0		 : COLOR0,
+	out float4 oColor1		 : COLOR1,	
+    out float  oUV			 : TEXCOORD0,
+    out float2 oPosPatch	 : TEXCOORD1,
+	out float3 oVRay		 : TEXCOORD2,
+	out float3 oAttenuation	 : TEXCOORD3,	
+	//AtmosphericScattering parameters
+	uniform sampler2D OpticalDepth : TEXUNIT2,
+	uniform float3 lightDirection,
+	uniform float3 cameraPosition,
+	uniform float fOuterRadius,
+	uniform float fInnerRadius,	
+	uniform float Kr,
+	uniform float Km,
+	uniform float PI,
+	//uniform float g,
+	uniform float ESun,
+	uniform float fSamples,
+	uniform float3 fWavelength,
+	uniform float DELTA,
+#ifdef interpolation	
+	uniform float fTexWidth,
+	uniform float fTexHeight,
+#endif	
+	//GeoClipmap parameters
+    uniform float4x4 patchTx,
+    uniform float4x4 cubeTx,
+    uniform float	 radius,
+    uniform float	 nl, // it is nl for lod != 0, clipmap size fot lod == 0
+	uniform float4	 blockPos, // yz is 0 for lod != 0, viewpos for lod == 0
+    uniform float4x4 viewProj,
+    uniform sampler2D heightmap : TEXUNIT1
+)
+{
+	lightDirection = normalize(lightDirection);
+	
+	// in block pos
+	oPosition = position;
+	oPosition.xy += blockPos.xy;
+	
+	// calculate uv
+	float2 uv = oPosition.xy;
+	oPosPatch = oPosition.xy;
+	
+	// fix the uv at lod = 0
+	uv += blockPos.zw;
+	
+	// scale the uv
+	uv *= 2 / nl;
+		
+	// calc alpha
+	float steepness = 5;
+	float alpha = pow(max(abs(uv.x), abs(uv.y)), steepness);
+	
+	uv = (uv / 2 + float2(0.5, 0.5));
+	uv.y = -uv.y;
+	
+	//if (alpha > 0.9)
+	//	alpha = 1;
+	
+	// fetch height
+	float h = lerp(tex2D(heightmap, uv).r, tex2D(heightmap, uv).g, alpha);
+	
+	oUV = h;
+	//oPosition.z = h * 10;
+	
+	// calc debug color
+	//oColor = float4(h, h, h, 1);
+
+	// in patch space
+	oPosition = mul(patchTx, oPosition);
+	
+	// sphereify
+	oPosition.xyz = normalize(oPosition.xyz) * (radius + 5 * h);// * (radius + radius * 0.5 * h);
+	
+	float3 vPosition = oPosition.xyz;	
+	
+	// in world space
+	oPosition = mul(cubeTx, oPosition);	
+	
+	// projection
+	oPosition = mul(viewProj, oPosition);	
+	
+	//start of atmospheric scattering
+	float fCameraHeight = length(cameraPosition);
+	
+	float3 vRay = vPosition - cameraPosition;
+		
+	float posDotCam = dot(vPosition, -vRay) / (length(vPosition) * length(vRay));
+
+#ifdef CLIP	
+	if (posDotCam < -0.5) 
+	{
+		oColor0 = float4(0.0, 0.0, 0.0, 1.0);
+		oColor1 = float4(0.0, 0.0, 0.0, 1.0);
+	} 
+	else 
+#endif
+	{		
+		float4 color;
+		float4 xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil;
+		float xRatio, yRatio;
+		
+		float fScale = fOuterRadius - fInnerRadius;	
+#ifdef interpolation		
+		int texWidth = (int) fTexWidth;
+		int texHeight = (int) fTexHeight;
+#endif
+		
+		float3 fWavelength4;
+		fWavelength4.r = pow(fWavelength.r, 4.0);
+		fWavelength4.g = pow(fWavelength.g, 4.0);
+		fWavelength4.b = pow(fWavelength.b, 4.0);	
+						
+		/*
+		float3 vPosition = float3(0.5, 0.5, 0.5);
+		vPosition /= length(vPosition);
+		vPosition *= 10.05;
+		*/					
+		
+		float fFar = length(vRay);
+		vRay = normalize(vRay);
+		oVRay = vRay;
+
+		//Calculate the closest intersection of the ray and outer atmosphere
+		float B = 2.0 * dot(vRay, cameraPosition);
+		float C = dot(cameraPosition, cameraPosition) - fOuterRadius * fOuterRadius;
+		float discriminant = B * B - 4.0 * C;
+		discriminant = max(0.0, discriminant);
+		float fNear = 0.5 * (-B - sqrt(discriminant));
+
+		bool bCameraInAtmosphere = false;
+		bool bCameraAbove = true;
+		
+		//float4 texValue;
+		float4 fCameraDepth = float4(0.0, 0.0, 0.0, 0.0);
+		float4 fLightDepth = float4(0.0, 0.0, 0.0, 0.0);
+		float4 fSampleDepth = float4(0.0, 0.0, 0.0, 0.0);	
+
+		if (fNear <= 0.0) {
+			//camera is inside atmosphere
+			bCameraInAtmosphere = true;
+			fNear = 0.0;
+					
+			bCameraAbove = (fCameraHeight >= length(vPosition))? true : false;
+			
+			float fCameraAltitude = (fCameraHeight - fInnerRadius) / fScale;								
+			float fCameraAngle = dot((bCameraAbove? -vRay : vRay), cameraPosition) / fCameraHeight;
+			fCameraAngle = 0.5 - fCameraAngle * 0.5;	//change to texture coordinate
+#ifndef interpolation			
+			fCameraDepth = tex2D(OpticalDepth, float2(fCameraAltitude, fCameraAngle));
+#else			
+			float fCameraAltitudeU = fCameraAltitude * (texWidth - 1);
+			float fCameraAngleV = fCameraAngle * (texHeight - 1);
+			
+			float fCameraAltitudeFloor = floor(fCameraAltitudeU);
+			float fCameraAltitudeCeil = ceil(fCameraAltitudeU);
+			
+			float fCameraAngleFloor = floor(fCameraAngleV);				
+			float fCameraAngleCeil = ceil(fCameraAngleV);
+			
+			xRatio = fCameraAltitudeU - fCameraAltitudeFloor;
+			yRatio = fCameraAngleV - fCameraAngleFloor;
+			
+			xFloorYFloor = tex2D(OpticalDepth, float2(fCameraAltitudeFloor / (texWidth - 1), fCameraAngleFloor / (texHeight - 1)));
+			xCeilYFloor = tex2D(OpticalDepth, float2(fCameraAltitudeCeil / (texWidth - 1), fCameraAngleFloor / (texHeight - 1)));
+			xFloorYCeil = tex2D(OpticalDepth, float2(fCameraAltitudeFloor / (texWidth - 1), fCameraAngleCeil / (texHeight - 1)));		
+			xCeilYCeil = tex2D(OpticalDepth, float2(fCameraAltitudeCeil / (texWidth - 1), fCameraAngleCeil / (texHeight - 1)));
+			
+			fCameraDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);
+#endif						
+		} else {
+			//move camera to the near intersection point
+			cameraPosition += vRay * fNear;
+			fFar -= fNear;
+		}
+		
+		//check if length of ray and atmosphere intersection is negligible
+		if (fFar <= DELTA) {
+			oColor0 = float4(0.0, 0.0, 0.0, 1.0);			
+			oColor1 = float4(0.0, 0.0, 0.0, 1.0);			
+		} else {
+			
+			//initialize variables
+			float3 fRayleighSum = float3(0.0, 0.0, 0.0);
+			float3 fMieSum = float3(0.0, 0.0, 0.0);
+			
+			int samples = (int) fSamples;
+			float fSampleLength = fFar / samples;
+			float fScaledLength = fSampleLength / fScale;
+			float3 vSampleRay = vRay * fSampleLength;
+			
+			float fRayleighDensity, fRayleighDepth, fMieDensity, fMieDepth;
+			float refRayleighDepth, refMieDepth;
+			
+			float3 fAttenuation;
+			
+			//start at the center of the first sample ray
+			vPosition = cameraPosition + vSampleRay * 0.5;
+			for (int i = 0;i < samples;i++) {
+				float fHeight = length(vPosition);
+				
+				//optical depth from sample point to light			
+				float fAltitude = (fHeight - fInnerRadius) / fScale;					
+				float fLightAngle = dot(lightDirection, vPosition) / fHeight;
+				fLightAngle = 0.5 - fLightAngle * 0.5;	//change to texture coordinate		
+#ifndef interpolation				
+				fLightDepth = tex2D(OpticalDepth, float2(fAltitude, fLightAngle));
+#else				
+				float fAltitudeU = fAltitude * (texWidth - 1);
+				float fLightAngleV = fLightAngle * (texHeight - 1);
+				
+				float fAltitudeFloor = floor(fAltitudeU);
+				float fAltitudeCeil = ceil(fAltitudeU);
+				
+				float fLightAngleFloor = floor(fLightAngleV);				
+				float fLightAngleCeil = ceil(fLightAngleV);
+				
+				xRatio = fAltitudeU - fAltitudeFloor;
+				yRatio = fLightAngleV - fLightAngleFloor;
+				
+				xFloorYFloor = tex2D(OpticalDepth, float2(fAltitudeFloor / (texWidth - 1), fLightAngleFloor / (texHeight - 1)));
+				xCeilYFloor = tex2D(OpticalDepth, float2(fAltitudeCeil / (texWidth - 1), fLightAngleFloor / (texHeight - 1)));
+				xFloorYCeil = tex2D(OpticalDepth, float2(fAltitudeFloor / (texWidth - 1), fLightAngleCeil / (texHeight - 1)));		
+				xCeilYCeil = tex2D(OpticalDepth, float2(fAltitudeCeil / (texWidth - 1), fLightAngleCeil / (texHeight - 1)));
+				
+				fLightDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);
+#endif				
+				//check if light can be reached
+				if (fLightDepth.r > DELTA) {
+					fRayleighDensity = fScaledLength * fLightDepth.r;
+					fRayleighDepth = fLightDepth.g;
+					fMieDensity = fScaledLength * fLightDepth.b;
+					fMieDepth = fLightDepth.a;			
+									
+					if (bCameraAbove) {
+						float fSampleAngle = dot(-vRay, vPosition) / fHeight;
+						fSampleAngle = 0.5 - fSampleAngle * 0.5;	//change to texture coordinate									
+#ifndef interpolation						
+						fSampleDepth = tex2D(OpticalDepth, float2(fAltitude, fSampleAngle));
+#else						
+						float fSampleAngleV = fSampleAngle * (texHeight - 1);					
+						
+						float fSampleAngleFloor = floor(fSampleAngleV);				
+						float fSampleAngleCeil = ceil(fSampleAngleV);
+											
+						yRatio = fSampleAngleV - fSampleAngleFloor;
+						
+						xFloorYFloor = tex2D(OpticalDepth, float2(fAltitudeFloor / (texWidth - 1), fSampleAngleFloor / (texHeight - 1)));
+						xCeilYFloor = tex2D(OpticalDepth, float2(fAltitudeCeil / (texWidth - 1), fSampleAngleFloor / (texHeight - 1)));
+						xFloorYCeil = tex2D(OpticalDepth, float2(fAltitudeFloor / (texWidth - 1), fSampleAngleCeil / (texHeight - 1)));		
+						xCeilYCeil = tex2D(OpticalDepth, float2(fAltitudeCeil / (texWidth - 1), fSampleAngleCeil / (texHeight - 1)));
+						
+						fSampleDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);
+#endif						
+						fRayleighDepth += fSampleDepth.g - fCameraDepth.g;
+						fMieDepth += fSampleDepth.a - fCameraDepth.a;
+						
+						refRayleighDepth = fSampleDepth.g - fCameraDepth.g;
+						refMieDepth = fSampleDepth.a - fCameraDepth.a;
+					} else {
+						float fSampleAngle = dot(vRay, vPosition) / fHeight;
+						fSampleAngle = 0.5 - fSampleAngle * 0.5;	//change to texture coordinate	
+#ifndef interpolation						
+						fSampleDepth = tex2D(OpticalDepth, float2(fAltitude, fSampleAngle));
+#else
+						float fSampleAngleV = fSampleAngle * (texHeight - 1);					
+						
+						float fSampleAngleFloor = floor(fSampleAngleV);				
+						float fSampleAngleCeil = ceil(fSampleAngleV);
+											
+						yRatio = fSampleAngleV - fSampleAngleFloor;
+						
+						xFloorYFloor = tex2D(OpticalDepth, float2(fAltitudeFloor / (texWidth - 1), fSampleAngleFloor / (texHeight - 1)));
+						xCeilYFloor = tex2D(OpticalDepth, float2(fAltitudeCeil / (texWidth - 1), fSampleAngleFloor / (texHeight - 1)));
+						xFloorYCeil = tex2D(OpticalDepth, float2(fAltitudeFloor / (texWidth - 1), fSampleAngleCeil / (texHeight - 1)));		
+						xCeilYCeil = tex2D(OpticalDepth, float2(fAltitudeCeil / (texWidth - 1), fSampleAngleCeil / (texHeight - 1)));
+						
+						fSampleDepth = interpolate(xFloorYFloor, xCeilYFloor, xFloorYCeil, xCeilYCeil, xRatio, yRatio);
+#endif						
+						fRayleighDepth += fCameraDepth.g - fSampleDepth.g;
+						fMieDepth += fCameraDepth.a - fSampleDepth.a;					
+						
+						refRayleighDepth = fCameraDepth.g - fSampleDepth.g;
+						refMieDepth = fCameraDepth.a - fSampleDepth.a;
+					}
+					
+					//multiply optical depth by attenuation factor
+					fRayleighDepth *= Kr * 4 * PI;
+					fMieDepth *= Km * 4 * PI;
+													
+					fAttenuation.r = exp(-fRayleighDepth / fWavelength4.r - fMieDepth);
+					fAttenuation.g = exp(-fRayleighDepth / fWavelength4.g - fMieDepth);
+					fAttenuation.b = exp(-fRayleighDepth / fWavelength4.b - fMieDepth);
+					
+					fRayleighSum.r += fRayleighDensity * fAttenuation.r;
+					fRayleighSum.g += fRayleighDensity * fAttenuation.g;
+					fRayleighSum.b += fRayleighDensity * fAttenuation.b;
+					
+					fMieSum.r += fMieDensity * fAttenuation.r;
+					fMieSum.g += fMieDensity * fAttenuation.g;
+					fMieSum.b += fMieDensity * fAttenuation.b;
+				}				
+				vPosition += vSampleRay;
+			}		
+			/*
+			float fCos = dot(-vRay, lightDirection);
+					
+			//Get phase function value from lookup table
+			//fCos = 0.5 - fCos * 0.5;	//change to texture coordinate		
+			//float2 fPhase = tex1D(RayleighPhase, fCos).rg;
+
+			//Calculate phase function value		
+			float2 fPhase;		
+			fPhase.r = 0.75 * (1.0 + fCos * fCos);
+			fPhase.g = 1.5 * ((1.0 - g * g) / (2.0 + g * g)) * (1.0 + fCos * fCos) / pow(1.0 + g * g - 2.0 * g * fCos, 1.5);
+					
+			fPhase.r *= Kr * ESun;
+			fPhase.g *= Km * ESun;		
+					
+			//Calculate in-scattering color				
+			color.r = fRayleighSum.r * fPhase.r / fWavelength4.r + fMieSum.r * fPhase.g;
+			color.g = fRayleighSum.g * fPhase.r / fWavelength4.g + fMieSum.g * fPhase.g;
+			color.b = fRayleighSum.b * fPhase.r / fWavelength4.b + fMieSum.b * fPhase.g;					
+			
+			float scale = 1.0;
+			
+			color.a = 1.0;		
+			
+			oColor = color;				
+			*/
+			
+			//if (fLightDepth.r > 0)
+			{
+				refRayleighDepth *= Kr * 4 * PI;
+				refMieDepth *= Km * 4 * PI;
+												
+				oAttenuation.r = exp(-refRayleighDepth / fWavelength4.r - refMieDepth);
+				oAttenuation.g = exp(-refRayleighDepth / fWavelength4.g - refMieDepth);
+				oAttenuation.b = exp(-refRayleighDepth / fWavelength4.b - refMieDepth);
+			}
+			/*
+			else
+			{
+				oAttenuation = float4(0, 0, 0, 0);
+			}
+			*/	
+			oColor0.r = fRayleighSum.r / fWavelength4.r * Kr * ESun;
+			oColor0.g = fRayleighSum.g / fWavelength4.g * Kr * ESun;
+			oColor0.b = fRayleighSum.b / fWavelength4.b * Kr * ESun;
+			oColor0.a = 1.0;
+			
+			oColor1.r = fMieSum.r * Km * ESun;
+			oColor1.g = fMieSum.g * Km * ESun;
+			oColor1.b = fMieSum.b * Km * ESun;
+			oColor1.a = 1.0;
+		}
+	}
+	//end of atmospheric scattering		
+}
+
+void main_fp
+(
+	float3 fRayleighSum			  : COLOR0,
+	float3 fMieSum				  : COLOR1,
+	float  uv					  : TEXCOORD0,
+	float2 posPatch				  : TEXCOORD1,
+	float3 vRay		 		  	  : TEXCOORD2,
+	float3 attenuation		  	  : TEXCOORD3,
+	out float4 oColor			  : COLOR,
+	uniform sampler1D heightScale : TEXUNIT0,
+	uniform float3 lightDirection,
+	uniform float g,
+	uniform float4 clipCenter // if it is used, the x value is non zero
+)
+{
+	lightDirection = normalize(lightDirection);
+	
+	float2 inClipRegion = abs(posPatch - clipCenter.yz) - clipCenter.w;
+	clip(clipCenter.x * max(inClipRegion.x, inClipRegion.y));		
+	/*if (clipCenter.x > 0) {
+	}*/
+	
+	float fCos = dot(-vRay, lightDirection);
+	
+	float2 fPhase;		
+	
+	float3 terraincol = tex1D(heightScale, uv).rgb;
+	
+	fPhase.r = 0.75 * (1.0 + fCos * fCos);
+	fPhase.g = 1.5 * ((1.0 - g * g) / (2.0 + g * g)) * (1.0 + fCos * fCos) / pow(1.0 + g * g - 2.0 * g * fCos, 1.5);
+	
+	oColor.r = fRayleighSum.r * fPhase.r + fMieSum.r * fPhase.g;
+	oColor.g = fRayleighSum.g * fPhase.r + fMieSum.g * fPhase.g;
+	oColor.b = fRayleighSum.b * fPhase.r + fMieSum.b * fPhase.g;
+	
+	float3 scattercol = fRayleighSum * fPhase.r + fMieSum * fPhase.g;
+	
+	//oColor.rgb = scattercol + attenuation * terraincol;//length(oColor.rgb) * 6 * terraincol;	
+	oColor.rgb = scattercol + attenuation * clamp(10 * length(scattercol), 0, 1) * terraincol ;//length(oColor.rgb) * 6 * terraincol;
+	
+	oColor.a = 1.0;
+}
