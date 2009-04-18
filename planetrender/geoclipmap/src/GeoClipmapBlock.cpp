@@ -125,6 +125,9 @@ void GeoClipmapBlock::_updateCustomGpuParameter(const GpuProgramParameters::Auto
 	case 7:		
 		params->_writeRawConstant(constantEntry.physicalIndex, pCube.getCamPosLocal());
 		break;		
+	case 8:		
+		params->_writeRawConstant(constantEntry.physicalIndex, pCube.getLightDirLocal());
+		break;		
 	default:
 		Renderable::_updateCustomGpuParameter(constantEntry, params);
 	}

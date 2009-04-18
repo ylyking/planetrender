@@ -47,7 +47,9 @@ namespace Ogre
 		Ogre::String m_ResNamePrefix;	
 		String m_OpticalDepthTexName;
 
+		Light* m_light;
 		Vector3 m_CamPosLocal;
+		Vector3 m_LightDirLocal;
 
 		//// Methods
 		void createGrids();
@@ -59,7 +61,7 @@ namespace Ogre
 	public:
 
 		//// Con/Destrs
-		GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, unsigned int detailGridSize, String opticalDepthTexName);
+		GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, unsigned int detailGridSize, String opticalDepthTexName, Light* light);
 		virtual ~GeoClipmapCube(void);
 
 		//// Getters/setters
@@ -69,7 +71,9 @@ namespace Ogre
 		Clipmap* getClipmap(unsigned int faceID) const { return m_Clipmaps[faceID]; }
 		Camera* getCamera() const { return m_Camera; }		
 		String getOpticalDepthTexName() const { return m_OpticalDepthTexName; }
+
 		Vector3 getCamPosLocal() const { return m_CamPosLocal; }
+		Vector3 getLightDirLocal() const { return m_LightDirLocal; }
 
 		//// Override
 		virtual const String& getMovableType(void) const;

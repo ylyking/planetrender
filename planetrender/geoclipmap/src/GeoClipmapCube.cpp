@@ -12,7 +12,7 @@
 
 using namespace Ogre;
 
-GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, unsigned int detailGridSize, String opticalDepthTexName) :
+GeoClipmapCube::GeoClipmapCube(float radius, float maxHeight, SceneManager* sceneMgr, Camera* camera, unsigned int detailGridSize, String opticalDepthTexName, Light* light) :
 m_SceneMgr(sceneMgr),
 m_Camera(camera),
 m_Radius(radius),
@@ -20,7 +20,8 @@ m_MaxHeight(maxHeight + radius),
 m_SemiEdgeLen(radius * Math::Cos(Degree(45))),
 //m_AABB(Vector3(-(radius + maxHeight) * Math::Cos(Degree(45))), Vector3((radius + maxHeight) * Math::Cos(Degree(45))))
 m_AABB(Vector3(-(radius + maxHeight)), Vector3(radius + maxHeight)),
-m_OpticalDepthTexName(opticalDepthTexName)
+m_OpticalDepthTexName(opticalDepthTexName),
+m_light(light)
 {	
 	//	m_ClipmapSize = cm->getLayerSize(0) - 1;//1 * (m_N - 1) ; // 64;//this is wrong, just a replacement value for debug
 	m_ClipmapSize = 129 - 1;
@@ -379,6 +380,7 @@ void Ogre::GeoClipmapCube::computePatchViewpoints()
 	camPosLocal = camPosLocal / m_SemiEdgeLen * (m_ClipmapSize / 2.0);
 
 	m_CamPosLocal = camPosLocal;
+	m_LightDirLocal = matLocalInv.transpose() * -m_light->getDirection();
 
 	int activeFaceID = -1;
 
