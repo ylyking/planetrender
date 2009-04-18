@@ -33,7 +33,7 @@ BaseApplication::BaseApplication(void)
 	mSceneMgr(0),
 	mWindow(0),
 	mSceneDetailIndex(0),
-	mMoveSpeed(100),
+	mMoveSpeed(50),
 	mRotateSpeed(36),
 	mDebugOverlay(0),
 	mDebugText(""),
@@ -53,8 +53,9 @@ BaseApplication::BaseApplication(void)
 	mRotY(0),
 	mFiltering(TFO_BILINEAR),
 	mAniso(1),
-	mCenter(Vector3(-10, 0, 0))
-{	
+	mCenter(Vector3(0, 0, 0)),
+	mPhase(0)
+{		
 }
 
 //-------------------------------------------------------------------------------------
@@ -104,12 +105,15 @@ void BaseApplication::createCamera(void)
 	// Create the camera	
 	mCamera = mSceneMgr->createCamera("PlayerCam");
 
-	Vector3 pos(0, 105, 0);
+	Vector3 pos(0, 0, 305);
+	//Vector3 pos(0, 105, 0);
 	pos += mCenter;	
 
 	mCamera->setPosition(pos);		
-	mCamera->lookAt(pos + Vector3(0, 0, 1));
-	mCamera->setNearClipDistance(5);
+	mCamera->lookAt((pos + Vector3(0, 0, -1)));
+	//mCamera->lookAt((pos + Vector3(0, 0, 1)));
+	mCamera->setNearClipDistance(1);
+	mCamera->setFarClipDistance(10000000);
 }
 //-------------------------------------------------------------------------------------
 void BaseApplication::createFrameListener(void)
@@ -119,7 +123,7 @@ void BaseApplication::createFrameListener(void)
 	mUseBufferedInputMouse = false;
 	mInputTypeSwitchingOn = mUseBufferedInputKeys || mUseBufferedInputMouse;
 	mRotateSpeed = 36;
-	mMoveSpeed = 100;
+	mMoveSpeed = 50;
 
 	using namespace OIS;
 
@@ -146,7 +150,7 @@ void BaseApplication::createFrameListener(void)
 	//Register as a Window listener
 	WindowEventUtilities::addWindowEventListener(mWindow, this);
 
-	mStatsOn = true;
+	mStatsOn = false;		
 	mNumScreenShots = 0;
 	mTimeUntilNextToggle = 0;
 	mSceneDetailIndex = 0;
@@ -156,7 +160,7 @@ void BaseApplication::createFrameListener(void)
 	mAniso = 1;
 	mFiltering = TFO_BILINEAR;
 
-	showDebugOverlay(true);
+	showDebugOverlay(mStatsOn);
 	mRoot->addFrameListener(this);
 }
 //-------------------------------------------------------------------------------------
@@ -215,7 +219,7 @@ void BaseApplication::go(void)
 	if (!setup())
 		return;
 
-	showDebugOverlay(true);
+	showDebugOverlay(mStatsOn);
 
 	mRoot->startRendering();
 
@@ -446,7 +450,6 @@ bool BaseApplication::processUnbufferedKeyInput(const FrameEvent& evt)
 		MaterialManager::getSingleton().setDefaultTextureFiltering(mFiltering);
 		MaterialManager::getSingleton().setDefaultAnisotropy(mAniso);
 
-
 		showDebugOverlay(mStatsOn);
 
 		mTimeUntilNextToggle = 1;
@@ -484,7 +487,9 @@ bool BaseApplication::processUnbufferedKeyInput(const FrameEvent& evt)
 	{
 		// Print camera details
 		mDebugText = "P: " + StringConverter::toString(mCamera->getDerivedPosition()) +
-			" " + "O: " + StringConverter::toString(mCamera->getDerivedOrientation());
+			" " + "L: " + StringConverter::toString(mSceneMgr->getLight("MainLight")->getDirection().dotProduct(-Vector3::UNIT_Y));
+			//" " + "H: " + StringConverter::toString((mCamera->getDerivedPosition() - mCenter).length());
+			//" " + "O: " + StringConverter::toString(mCamera->getDerivedOrientation());
 	}
 
 	// Return true to continue rendering
@@ -553,7 +558,93 @@ bool BaseApplication::frameStarted(const FrameEvent& evt)
 	mUseBufferedInputMouse = mMouse->buffered();
 	mUseBufferedInputKeys = mKeyboard->buffered();
 
+	//mTimeSlice += evt.timeSinceLastFrame;
 
+	//mPhase = 5;	
+	
+	if (mPhase == 0)
+	{
+		if (mCamera->getDerivedPosition().length() > 110)
+		{			
+			mCamera->moveRelative(Vector3(0, 0, 20 * -evt.timeSinceLastFrame));
+
+			Real camHeight = mCamera->getDerivedPosition().length();
+
+			if (camHeight < 125 && camHeight > 115)
+				mCamera->moveRelative(Vector3(0, 0, -(camHeight - 115)));
+		}		
+		else
+		{
+			mPhase = 1;
+			//mPhase = 5;
+		}
+	}
+	else if (mPhase == 1)
+	{
+		if (mCamera->getOrientation().getPitch() < Radian(1.3))
+		{			
+			mCamera->pitch(Radian(0.5 * evt.timeSinceLastFrame));
+			mCamera->moveRelative(Vector3(0, 0, 2 * -evt.timeSinceLastFrame));
+		}
+		else
+		{
+			mPhase = 2;
+		}
+	}
+	else if (mPhase == 2)
+	{		
+		if (mCamera->getOrientation().getPitch() < Radian(2.2))
+		{
+			Vector3 ray = mCamera->getPosition() - mCenter;
+			Ogre::Quaternion q(mRotScale, mCamera->getOrientation().xAxis());		
+			//mCamera->rotate(q);		
+			/**/
+			mCamera->move(-ray);
+			mCamera->pitch(mRotScale);						
+			ray = q * ray;
+			mCamera->move(ray);					
+		}		
+		else
+		{
+			mPhase = 3;
+		}
+	}
+	else if (mPhase == 3)
+	{
+		Light* l = mSceneMgr->getLight("MainLight");
+
+		Vector3 dir = l->getDirection();
+
+		if (dir.dotProduct(-Vector3::UNIT_Y) < 0.99)
+		{
+			//Ogre::Quaternion q(-mRotScale, mCamera->getOrientation().xAxis());
+			Ogre::Quaternion q(-Radian(0.01), Vector3::UNIT_X);
+			dir = q * dir;
+			l->setDirection(dir);
+		}
+		else
+		{
+			mPhase = 4;
+		}
+	}
+	else if (mPhase == 4)
+	{
+		Light* l = mSceneMgr->getLight("MainLight");
+
+		Vector3 dir = l->getDirection();
+
+		if (dir.dotProduct(-Vector3::UNIT_Y) > 0)
+		{
+			//Ogre::Quaternion q(-mRotScale, mCamera->getOrientation().xAxis());
+			Ogre::Quaternion q(Radian(0.01), Vector3::UNIT_X);
+			dir = q * dir;
+			l->setDirection(dir);
+		}
+		else
+		{
+			mPhase = 5;
+		}
+	}
 
 	if ( !mUseBufferedInputMouse || !mUseBufferedInputKeys)
 	{

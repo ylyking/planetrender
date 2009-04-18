@@ -99,6 +99,7 @@ protected:
 	int mAniso;
 
 	Vector3 mCenter;
+	int mPhase;
 };
 
 #endif // #ifndef __BaseApplication_h_

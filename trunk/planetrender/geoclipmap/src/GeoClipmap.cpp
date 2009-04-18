@@ -43,15 +43,33 @@ void GeoClipmapApp::createScene(void)
 	cm->addTexture("clipmap_1025x1025.bmp");
 	*/
 
-	const int rings = 90;
-	const int segments = 90;
-	const float fOuterRadius = 120.0;
+	// Set ambient light
+	mSceneMgr->setAmbientLight(ColourValue(0.5, 0.5, 0.5));
+
+	// Create a light
+	Light* l = mSceneMgr->createLight("MainLight");
+	//l->setPosition(20,80,50);	
+	l->setType(Light::LT_DIRECTIONAL);		
+
+	Ogre::Vector3 lightDir(0.0, 0.0, -1.0);
+	lightDir.normalise();
+	l->setDirection(lightDir);		
+
+	l->setDiffuseColour(1.0, 1.0, 1.0);
+	l->setSpecularColour(1.0, 1.0, 1.0);	
+
+	const int rings = 190;
+	const int segments = 190;
+	const float fOuterRadius = 115.0;
 	const float fInnerRadius = 100.0;
 	const String opticalDepthTexName = "OpticalDepth";
 #if HDR == 1
 	CompositorManager::getSingleton().addCompositor(mCamera->getViewport(), "HDR");
 	CompositorManager::getSingleton().setCompositorEnabled(mCamera->getViewport(), "HDR", true);
 #endif
+
+	SceneNode* cubeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("CubeNode", mCenter);
+	//cubeNode->setScale(Vector3(1000, 1000, 1000));
 
 #if ATMOSPHERE == 1		
 
@@ -62,14 +80,15 @@ void GeoClipmapApp::createScene(void)
 	createSphere("outerSphereMesh", fOuterRadius, rings, segments, CLOCKWISE);
 	Entity* outerSphereEntity = mSceneMgr->createEntity("outerSphereEntity", "outerSphereMesh");
 	outerSphereEntity->setMaterialName("Atmosphere");			
-	SceneNode* outerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("OuterSphere", mCenter);	
-	outerSphereNode->attachObject(outerSphereEntity);
+	//SceneNode* outerSphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("OuterSphere", mCenter);	
+	//outerSphereNode->attachObject(outerSphereEntity);
+	cubeNode->attachObject(outerSphereEntity);
 #endif		
 
 #if GEOCLIPMAP == 1
-	GeoClipmapCube* gcmcube = new GeoClipmapCube(fInnerRadius, 0, mSceneMgr, mCamera, 127, opticalDepthTexName);
+	GeoClipmapCube* gcmcube = new GeoClipmapCube(fInnerRadius, 0, mSceneMgr, mCamera, 127, opticalDepthTexName, l);
 
-	SceneNode* cubeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("CubeNode", mCenter);
+	//SceneNode* cubeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("CubeNode", mCenter);
 	cubeNode->attachObject(gcmcube);
 #elif GEOCLIPMAP == 0
 	//create inner sphere
@@ -85,22 +104,7 @@ void GeoClipmapApp::createScene(void)
 	//Entity* ogreHead = mSceneMgr->createEntity("Head", gcmcube->getMeshName(GeoClipmapCube::GCM_MESH_2XL));
 
 	//SceneNode* headNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("HeadNode", Vector3(50, 0, 0));
-	//headNode->attachObject(ogreHead);	
-
-	// Set ambient light
-	mSceneMgr->setAmbientLight(ColourValue(0.5, 0.5, 0.5));
-
-	// Create a light
-	Light* l = mSceneMgr->createLight("MainLight");
-	//l->setPosition(20,80,50);	
-	l->setType(Light::LT_DIRECTIONAL);		
-
-	Ogre::Vector3 lightDir(0.0, 0.0, -1.0);
-	lightDir.normalise();
-	l->setDirection(lightDir);		
-
-	l->setDiffuseColour(1.0, 1.0, 1.0);
-	l->setSpecularColour(1.0, 1.0, 1.0);	
+	//headNode->attachObject(ogreHead);		
 
 	//mSceneMgr->showBoundingBoxes(true);
 }
