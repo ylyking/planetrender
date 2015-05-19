@@ -1,0 +1,1 @@
+Planet Rendering plug-in for OGRE3D
